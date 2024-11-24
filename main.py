@@ -1,47 +1,89 @@
 import pygame
 
+
 def main():
-    # pygame setup
+    # Pygame setup
     pygame.init()
     screen = pygame.display.set_mode((1280, 720))
     clock = pygame.time.Clock()
     running = True
-    dt = 0
     SCREEN_WIDTH = screen.get_width()
     SCREEN_HEIGHT = screen.get_height()
 
-    player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+    # Load background image and scale it to fit the screen
+    background_image = pygame.image.load("background.png")
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-        screen.fill("#2a513c")
 
-        # RENDER YOUR GAME HERE
-        pygame.draw.circle(screen, "red", player_pos, 80)
+        # Render background image
+        screen.blit(background_image, (0, 0))
 
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_w]:
-            player_pos.y -= 600 * dt
-        if keys[pygame.K_s]:
-            player_pos.y += 600 * dt
-        if keys[pygame.K_a]:
-            player_pos.x -= 600 * dt
-        if keys[pygame.K_d]:
-            player_pos.x += 600 * dt
-
-        if player_pos.x >= SCREEN_WIDTH:
-            player_pos.x = -80
-        if player_pos.y >= SCREEN_HEIGHT:
-            player_pos.y = -80
+        # Render game screens
+        start_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT)
 
         pygame.display.flip()
-
-        print("Position: ",player_pos)
-
-        dt = clock.tick(60) / 1000
+        clock.tick(60)
 
     pygame.quit()
-if __name__ == '__main__':
+
+
+def start_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
+    # Margins and colors
+    margin = 40
+    container_color = (0, 0, 0, 160)
+    button_color = "#000000"
+    text_color = "#ffffff"
+    font_path = pygame.font.match_font("arial")  # Default font
+
+    # Fonts
+    title_font = pygame.font.Font(font_path, 38)
+    button_font = pygame.font.Font(font_path, 20)
+
+    # Main container dimensions
+    rect_x = margin
+    rect_y = margin
+    rect_width = SCREEN_WIDTH - 2 * margin
+    rect_height = SCREEN_HEIGHT - 2 * margin
+
+    # Transparent container
+    container_surface = pygame.Surface((rect_width, rect_height), pygame.SRCALPHA)
+    container_surface.fill(container_color)
+    screen.blit(container_surface, (rect_x, rect_y))
+
+    #border
+    # for i in range(4):
+    #     border_pos = pygame.Rect(rect_x - i, rect_y - i, rect_width, rect_height)
+    #     pygame.draw.rect(screen, button_color, border_pos, 1, border_radius=20)
+
+    # Title
+    title_text = "Notty Game"
+    title_surface = title_font.render(title_text, True, text_color)
+    title_x = rect_x + (rect_width - title_surface.get_width()) // 2
+    title_y = rect_y + 50
+    screen.blit(title_surface, (title_x, title_y))
+
+    # Buttons
+    button_width = rect_width // 2
+    button_height = 60
+    button_x = rect_x + (rect_width - button_width) // 2
+    button_gap = 40
+    start_y = title_y + 100  # Space below the title
+
+    button_texts = ["Play", "Game rules", "Credits", "Exit"]
+    for i, text in enumerate(button_texts):
+        button_y = start_y + i * (button_height + button_gap)
+        button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+        pygame.draw.rect(screen, button_color, button_rect, border_radius=10)
+
+        # Button text
+        button_surface = button_font.render(text, True, text_color)
+        text_x = button_x + (button_width - button_surface.get_width()) // 2
+        text_y = button_y + (button_height - button_surface.get_height()) // 2
+        screen.blit(button_surface, (text_x, text_y))
+
+
+if __name__ == "__main__":
     main()
