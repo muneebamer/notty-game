@@ -1,0 +1,189 @@
+import pygame
+import random
+import threading
+import sys
+import time
+
+# Pygame Setup
+pygame.init()
+
+# Constants
+WIDTH, HEIGHT = 800, 600
+CARD_WIDTH, CARD_HEIGHT = 60, 90
+FPS = 30
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+
+# Initialize the game window
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Notty Card Game")
+clock = pygame.time.Clock()
+
+# Load images for card colors
+card_images = {
+    "red": pygame.Surface((CARD_WIDTH, CARD_HEIGHT)),
+    "blue": pygame.Surface((CARD_WIDTH, CARD_HEIGHT)),
+    "green": pygame.Surface((CARD_WIDTH, CARD_HEIGHT)),
+    "yellow": pygame.Surface((CARD_WIDTH, CARD_HEIGHT)),
+}
+for color in card_images:
+    card_images[color].fill(pygame.Color(color))  # Simple solid color for cards
+
+
+# Backend Classes
+class Card:
+    def __init__(self, color, number):
+        self.color = color
+        self.number = number
+
+    def __str__(self):
+        return f"{self.color} {self.number}"
+
+    def get_image(self):
+        return card_images[self.color]
+
+
+class Deck:
+    def __init__(self):
+        self.cards = [
+            Card(color, number) for color in ["red", "blue", "green", "yellow"] for number in range(1, 11)
+        ] * 2
+        random.shuffle(self.cards)
+        self.discards = []
+
+    def draw(self, num_cards):
+        if len(self.cards) < num_cards:
+            self._reshuffle_discard_pile()
+        return [self.cards.pop() for _ in range(min(num_cards, len(self.cards)))]
+
+    def _reshuffle_discard_pile(self):
+        if self.discards:
+            self.cards.extend(self.discards)
+            random.shuffle(self.cards)
+            self.discards.clear()
+
+    def add_to_discard(self, cards):
+        self.discards.extend(cards)
+
+
+class Player:
+    def __init__(self, name):
+        self.name = name
+        self.cards = []
+
+    def add_cards(self, cards):
+        self.cards.extend(cards)
+
+    def remove_cards(self, cards):
+        for card in cards:
+            self.cards.remove(card)
+
+    def find_valid_group(self):
+        if len(self.cards) < 3:
+            return None
+        colors = [card.color for card in self.cards]
+        numbers = [card.number for card in self.cards]
+        for num in set(numbers):
+            same_number_cards = [card for card in self.cards if card.number == num]
+            if len(same_number_cards) >= 3:
+                return same_number_cards
+        for color in set(colors):
+            same_color_cards = sorted((card for card in self.cards if card.color == color), key=lambda x: x.number)
+            for i in range(len(same_color_cards) - 2):
+                if (same_color_cards[i].number + 1 == same_color_cards[i + 1].number and
+                        same_color_cards[i + 1].number + 1 == same_color_cards[i + 2].number):
+                    return same_color_cards[i:i + 3]
+        return None
+
+
+class Game:
+    def __init__(self):
+        self.deck = Deck()
+        self.players = [Player("Player 1"), Player("Player 2"), Player("Player 3")]
+        self.current_player_idx = 0
+        for player in self.players:
+            player.add_cards(self.deck.draw(5))
+
+    def next_player(self):
+        self.current_player_idx = (self.current_player_idx + 1) % len(self.players)
+
+    def check_winner(self):
+        for player in self.players:
+            if not player.cards:
+                return player
+        return None
+
+
+# Pygame Game Loop
+class NottyGameUI:
+    def __init__(self):
+        self.game = Game()
+        self.font = pygame.font.SysFont('Arial', 20)
+        self.running = True
+
+    def draw_cards(self):
+        # Draw all cards of the current player on the screen
+        current_player = self.game.players[self.game.current_player_idx]
+        x_offset = 50
+        for i, card in enumerate(current_player.cards):
+            screen.blit(card.get_image(), (x_offset + i * (CARD_WIDTH + 10), HEIGHT - 150))
+            text = self.font.render(f"{card.number}", True, BLACK)
+            screen.blit(text, (x_offset + i * (CARD_WIDTH + 10) + 20, HEIGHT - 120))
+
+    def draw_message(self, message, y_offset):
+        # Display a message on the screen
+        text = self.font.render(message, True, BLACK)
+        screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 + y_offset))
+
+    def game_loop(self):
+        while self.running:
+            screen.fill(WHITE)
+
+            self.handle_events()
+            self.draw_cards()
+
+            current_player = self.game.players[self.game.current_player_idx]
+            self.draw_message(f"Current Player: {current_player.name}", -200)
+
+            winner = self.game.check_winner()
+            if winner:
+                self.draw_message(f"{winner.name} wins!", 50)
+
+            pygame.display.flip()
+            clock.tick(FPS)
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if y > HEIGHT - 200:  # Clicking on the cards area
+                    current_player = self.game.players[self.game.current_player_idx]
+                    card_index = (x - 50) // (CARD_WIDTH + 10)
+                    if 0 <= card_index < len(current_player.cards):
+                        self.handle_card_click(current_player.cards[card_index])
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    self.game.next_player()
+
+    def handle_card_click(self, card):
+        current_player = self.game.players[self.game.current_player_idx]
+        message = f"You clicked on {card}"
+        print(message)  # For now, it just prints the selected card in the console
+        self.game.next_player()
+
+
+# Run the Game in a Thread
+def run_game():
+    game_ui = NottyGameUI()
+    game_ui.game_loop()
+
+# Start the game in a separate thread to allow for interactive cell execution
+game_thread = threading.Thread(target=run_game)
+game_thread.start()
+
+# In the Jupyter notebook, you will still be able to interact with the kernel while the game is running.
