@@ -119,13 +119,16 @@ class Player:
         return largest_group or None
 
     def steal_card(self, target_player):
-        """Steals a random card from another player."""
+        """Steals a random card from another player and adds it to the current player's cards."""
         if target_player.cards:
             stolen_card = random.choice(target_player.cards)
             target_player.remove_cards([stolen_card])
+            self.add_cards([stolen_card])  # Add the stolen card to the current player's cards
             return stolen_card
         return None
 
+
+    
 
 
 # Define the Game class
@@ -183,29 +186,34 @@ def print_game_state(game):
 # Function to prompt the human player for input
 def human_player_turn(game, current_player):
     print(f"\n{current_player.name}'s turn!")
+
+    #select action
+    action=input("""
     
-    # Draw cards
-    draw_choice = input("How many cards do you want to draw? (1, 2, 3): ")
-    if draw_choice in ["1", "2", "3"]:
-        game.draw_cards(current_player, int(draw_choice))
-    else:
-        print("Invalid choice. You can only draw up to 3 cards.")
-        return
+    1. Draw Cards
+    2. Steal a random card from a player
+    3. Discard valid group of cards
+    4. Skip turn
 
-    # Option to steal a card
-    steal_choice = input("Do you want to steal a card from another player? (y = yes, n = no): ")
-    if steal_choice == "y":
-        target_player = choose_target_player(game, current_player)
-        game.take_card_from_another_player(current_player, target_player)
-
-    # Discard the largest valid group or skip
-    action_choice = input("Do you want to discard the largest valid group or skip your turn? (d = discard, s = skip): ")
-    if action_choice == "d":
-        game.discard_largest_valid_group(current_player)
-    elif action_choice == "s":
-        print(f"{current_player.name} skipped their turn.")
+    Which action would you like to take? (1, 2, 3, 4)
+    """)
+    if action in ["1", "2", "3", "4"]:
+        if action =="1":
+            draw_choice = input("How many cards do you want to draw? (1, 2, 3): ")
+            if draw_choice in ["1", "2", "3"]:
+                game.draw_cards(current_player, int(draw_choice))
+            else:
+                print("Invalid choice. You can only draw up to 3 cards.")
+                return
+        elif action=="2":
+            target_player = choose_target_player(game, current_player)
+            game.take_card_from_another_player(current_player, target_player)
+        elif action=="3":
+            game.discard_largest_valid_group(current_player)
+        elif action=="4":
+            print(f"{current_player.name} skipped their turn.")
     else:
-        print("Invalid action. You can only choose to discard or skip.")
+        print("Invalid action. You can only choose to an option between 1-4.")
 
 
 def choose_target_player(game, current_player):
@@ -220,7 +228,25 @@ def choose_target_player(game, current_player):
 
 # Main game loop
 def main():
+    print("Welcome to the Notty Card Game!")
+    while True:
+        try:
+            num_computers = int(input("How many computer opponents would you like to play against? (1 or 2): "))
+            if num_computers not in [1, 2]:
+                print("Invalid choice. Please enter 1 or 2.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+    # Create players dynamically based on user choice
+    players = [Player("Player 1", True)]  # Human player
+    for i in range(num_computers):
+        players.append(Player(f"Computer {i + 1}", False))
+    
+    # Initialize the game
     game = Game()
+    game.players = players  # Update players in the game
     running = True
 
     # Initial card distribution
@@ -238,7 +264,7 @@ def main():
         else:
             print(f"\n{current_player.name}'s turn (Computer)!")
             # Simulate computer player actions
-            action = random.choice([1, 2, 3, 4, 5])  # Random action
+            action = random.choice([1, 2, 3, 4])  # Random action
             if action == 1:
                 game.draw_cards(current_player, random.randint(1, 3))
             elif action == 2:
@@ -246,6 +272,8 @@ def main():
                 game.take_card_from_another_player(current_player, target_player)
             elif action == 3:
                 game.discard_largest_valid_group(current_player)
+            elif action == 4:
+                print(f"{current_player.name} skipped their turn.")
 
         # Check for winner
         winner = game.check_winner()
