@@ -1,5 +1,7 @@
 import pygame
 import sys
+import time
+from backend import GameManager
 
 
 def start_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
@@ -55,15 +57,19 @@ def start_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
         screen.blit(button_surface, (text_x, text_y))
 
 
-def play_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
+def play_screen(
+    screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=None, error_message=None
+):
     """Render the main game screen with Game Settings."""
     # Margins and colors
     container_color = (35, 64, 41, 120)
     text_color = "#ffffff"
+    error_box_color = "#bf3234"  # Slightly transparent red
     font_path = pygame.font.match_font("arial")  # Default font
     title_font = pygame.font.Font(font_path, 32)
     paragraph_font = pygame.font.Font(font_path, 18)
     button_font = pygame.font.Font(font_path, 18)
+    error_font = pygame.font.Font(font_path, 16)
 
     # Load and scale the background image
     main_bg_image = pygame.image.load("main-bg.jpg")
@@ -93,7 +99,6 @@ def play_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     screen.blit(title_surface, (title_x, title_y))
 
     # Body
-
     para_text = "Select how many players you want to play with"
     para_surface = paragraph_font.render(para_text, True, text_color)
     para_x = container_x + (container_width - para_surface.get_width()) // 2
@@ -110,9 +115,10 @@ def play_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     global option_1_rect, option_2_rect, start_button_rect, home_button_rect
 
     # Option 1: 1 Computer Player
+    option_1_color = "#1e6091" if total_players == 2 else "#000000"
     option_1_rect = pygame.Rect(option_x, option_y_start, option_width, option_height)
-    pygame.draw.rect(screen, "#000000", option_1_rect, border_radius=10)
-    option_1_text = button_font.render("1 Computer Player", True, text_color)
+    pygame.draw.rect(screen, option_1_color, option_1_rect, border_radius=10)
+    option_1_text = button_font.render("1 Bot", True, text_color)
     screen.blit(
         option_1_text,
         (
@@ -122,14 +128,15 @@ def play_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     )
 
     # Option 2: 2 Computer Players
+    option_2_color = "#1e6091" if total_players == 3 else "#000000"
     option_2_rect = pygame.Rect(
         option_x,
         option_y_start + option_height + option_gap,
         option_width,
         option_height,
     )
-    pygame.draw.rect(screen, "#000000", option_2_rect, border_radius=10)
-    option_2_text = button_font.render("2 Computer Players", True, text_color)
+    pygame.draw.rect(screen, option_2_color, option_2_rect, border_radius=10)
+    option_2_text = button_font.render("2 Bots", True, text_color)
     screen.blit(
         option_2_text,
         (
@@ -158,9 +165,7 @@ def play_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
 
     # Back to Home Button
     home_button_y = SCREEN_HEIGHT - 100
-    home_button_rect = pygame.Rect(
-        option_x, home_button_y, option_width, option_height
-    )
+    home_button_rect = pygame.Rect(option_x, home_button_y, option_width, option_height)
     pygame.draw.rect(screen, "#bc4749", home_button_rect, border_radius=10)
     home_button_text = button_font.render("Back to Home", True, text_color)
     screen.blit(
@@ -170,16 +175,46 @@ def play_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
             home_button_y + (option_height - home_button_text.get_height()) // 2,
         ),
     )
-def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
+
+    # Error message box
+    if error_message:
+        error_box_width = container_width
+        error_box_height = 40
+        error_box_x = container_x
+        error_box_y = start_button_y + option_height + 40
+
+        error_surface = pygame.Surface(
+            (error_box_width, error_box_height), pygame.SRCALPHA
+        )
+        error_surface.fill(error_box_color)
+        screen.blit(error_surface, (error_box_x, error_box_y))
+
+        error_text_surface = error_font.render(error_message, True, text_color)
+        error_text_x = (
+            error_box_x + (error_box_width - error_text_surface.get_width()) // 2
+        )
+        error_text_y = (
+            error_box_y + (error_box_height - error_text_surface.get_height()) // 2
+        )
+        screen.blit(error_text_surface, (error_text_x, error_text_y))
+
+
+def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
     """Render the main game screen."""
     font_path = pygame.font.match_font("arial")
     title_font = pygame.font.Font(font_path, 24)
     subtitle_font = pygame.font.Font(font_path, 24)
     card_font = pygame.font.Font(font_path, 24)
+    card_number_font = pygame.font.Font(font_path, 18)
     button_font = pygame.font.Font(font_path, 18)
-    exit_font = pygame.font.Font(font_path, 16)
+    small_font = pygame.font.Font(font_path, 16)
 
-    card_colors = {'red': '#d62828', 'green': '#8ac926', 'blue': '#03045e', 'yellow': '#ffd500'}
+    card_colors = {
+        "red": "#d62828",
+        "green": "#8ac926",
+        "blue": "#03045e",
+        "yellow": "#ffd500",
+    }
 
     # Load and scale the background image
     main_bg_image = pygame.image.load("start-game-bg.jpg")
@@ -191,28 +226,34 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     # Back to Home Button
     back_button_width = 120
     back_button_height = 50
-    back_button_x = 30
+    back_button_x = 55
     back_button_y = 20
     global back_to_home_rect  # Store rectangle for click handling
-    back_to_home_rect = pygame.Rect(back_button_x, back_button_y, back_button_width, back_button_height)
+    back_to_home_rect = pygame.Rect(
+        back_button_x, back_button_y, back_button_width, back_button_height
+    )
 
     # Draw the Back to Home button
     pygame.draw.rect(screen, "#BC4749", back_to_home_rect, border_radius=10)
-    back_button_text = exit_font.render("Exit game", True, (255, 255, 255))
-    back_text_x = back_button_x + (back_button_width - back_button_text.get_width()) // 2
-    back_text_y = back_button_y + (back_button_height - back_button_text.get_height()) // 2
+    back_button_text = small_font.render("Exit game", True, (255, 255, 255))
+    back_text_x = (
+        back_button_x + (back_button_width - back_button_text.get_width()) // 2
+    )
+    back_text_y = (
+        back_button_y + (back_button_height - back_button_text.get_height()) // 2
+    )
     screen.blit(back_button_text, (back_text_x, back_text_y))
 
-    # Title for the game screen
     title_text = "Deck"
     title_surface = title_font.render(title_text, True, (255, 255, 255))
     title_x = (SCREEN_WIDTH - title_surface.get_width()) // 2
     title_y = 20
     screen.blit(title_surface, (title_x, title_y))
 
-    # Deck Cards (Only show top 4 cards)
-    deck = ["red 1", "blue 2", "green 5", "yellow 1", "blue 4", "green 7", "red 3", "yellow 9"]
-    top_deck_cards = deck[-4:]  # Get the top 4 cards
+    # Deck showing top 5 for now
+    deck_obj = game_manager.deck.cards
+    deck = game_manager.format_deck_list(deck_obj)
+    top_deck_cards = deck[-4:] 
 
     # Deck position and dimensions
     deck_width = 120
@@ -220,36 +261,62 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     deck_x = SCREEN_WIDTH // 2 - deck_width // 2
     deck_y = SCREEN_HEIGHT // 6
 
-    # Stack deck cards
     for i, card in enumerate(top_deck_cards):
         color_name, number = card.split()
         card_color = pygame.Color(card_colors[color_name])
 
-        # Card rectangle (stacked slightly offset vertically)
         card_rect = pygame.Rect(deck_x, deck_y - i * 15, deck_width, deck_height)
         pygame.draw.rect(screen, card_color, card_rect, border_radius=10)
 
-        # Render the number on the card
+        # Render number
         number_color = "black" if color_name in ["yellow", "green"] else "white"
-        number_surface = card_font.render(number, True, number_color)
+        number_surface = small_font.render("Face Down", True, number_color)
         number_x = card_rect.x + (deck_width - number_surface.get_width()) // 2
         number_y = card_rect.y + (deck_height - number_surface.get_height()) // 2
         screen.blit(number_surface, (number_x, number_y))
+
+    # Remaining cards box
+    remaining_cards_text = f"Cards left: {len(deck)}"
+    remaining_cards_surface = button_font.render(
+        remaining_cards_text, True, (255, 255, 255)
+    )
+
+    box_width = deck_width
+    box_height = 40
+    box_x = deck_x
+    box_y = deck_y + deck_height + 10  # Below deck
+
+    box_surface = pygame.Surface((box_width, box_height), pygame.SRCALPHA)
+    box_surface.fill((0, 0, 0, 160))  # Black with some transparency
+    screen.blit(box_surface, (box_x, box_y))
+
+    text_x = box_x + (box_width - remaining_cards_surface.get_width()) // 2
+    text_y = box_y + (box_height - remaining_cards_surface.get_height()) // 2
+    screen.blit(remaining_cards_surface, (text_x, text_y))
 
     # Action Buttons
     button_width = 150
     button_height = 50
     button_gap = 20
     buttons = ["Draw", "Steal Card", "Discard", "Pass", "Play for me"]
-    global button_rects  # Store button rectangles for interaction
-    button_rects = []
+    global human_button_rects  # Store button rectangles for interaction
+    human_button_rects = []
 
     for i, button_text in enumerate(buttons):
-        button_x =( SCREEN_WIDTH // 2 - 2 * button_width - button_gap + i * (button_width + button_gap)) - 95
+        button_x = (
+            SCREEN_WIDTH // 2
+            - 2 * button_width
+            - button_gap
+            + i * (button_width + button_gap)
+        ) - 95
         button_y = SCREEN_HEIGHT - 350  # Positioned above the human player's cards
         button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
-        button_rects.append(button_rect)
-        pygame.draw.rect(screen, "black", button_rect, border_radius=10)
+        human_button_rects.append(button_rect)
+        if button_rect.collidepoint(mouse_pos):
+            button_color = "#6A994E"  # Hover color (green)
+        else:
+            button_color = "black"  # Default color
+        pygame.draw.rect(screen, button_color, button_rect, border_radius=10)
 
         # Render button text
         text_surface = button_font.render(button_text, True, (255, 255, 255))
@@ -257,86 +324,170 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
         text_y = button_y + (button_height - text_surface.get_height()) // 2
         screen.blit(text_surface, (text_x, text_y))
 
-    # Player Cards (Maximum of 20 cards per player)
-    player_cards = [
-        ["red 1", "blue 2", "green 5", "yellow 1", "red 6", "blue 3", "green 7", "green 7", "green 7", "green 7"],  # Human Player
-        ["blue 3", "green 4", "yellow 2", "red 7", "blue 6"],                     # Computer Player 1
-        ["green 6", "yellow 3", "blue 5", "red 8", "yellow 9"],                   # Computer Player 2
-    ]
-
     card_width = 80
     card_height = 100
     card_gap = 10
 
-    # Human Player (Bottom, non-stacked, two rows)
-    human_cards = player_cards[0]
-    human_start_x = (SCREEN_WIDTH - (10 * card_width + 9 * card_gap)) // 2
-    human_start_y = SCREEN_HEIGHT - 250
-    for row in range(2):
-        for col in range(10):
-            card_idx = row * 10 + col
-            if card_idx >= len(human_cards):
-                break
-            color_name, number = human_cards[card_idx].split()
+    human_cards_obj = game_manager.players[0] 
+    human_cards = game_manager.format_card_list(human_cards_obj)
+
+    #    Maximum cards per row
+    max_cards_per_row = 10
+
+    #    Calculate the number of rows needed
+    num_cards = len(human_cards)
+    num_rows = (
+        num_cards + max_cards_per_row - 1
+    ) // max_cards_per_row  # Ceiling division
+    human_start_y = SCREEN_HEIGHT - 250  # Y Pos 1st row
+
+    for row in range(num_rows):
+        # Determine the cards for the current row
+        row_start_idx = row * max_cards_per_row
+        row_end_idx = min((row + 1) * max_cards_per_row, num_cards)
+        cards_in_row = human_cards[row_start_idx:row_end_idx]
+
+        # X pos ceneter
+        total_card_width = (
+            len(cards_in_row) * card_width + (len(cards_in_row) - 1) * card_gap
+        )
+        human_start_x = (SCREEN_WIDTH - total_card_width) // 2
+
+        for col, card in enumerate(cards_in_row):
+            color_name, number = card.split()
             card_color = pygame.Color(card_colors[color_name])
 
-            # Card rectangle
             card_x = human_start_x + col * (card_width + card_gap)
             card_y = human_start_y + row * (card_height + card_gap)
             card_rect = pygame.Rect(card_x, card_y, card_width, card_height)
             pygame.draw.rect(screen, card_color, card_rect, border_radius=10)
 
-            # Render the number on the card
+            # Render the card number
             number_color = "black" if color_name in ["yellow", "green"] else "white"
             number_surface = card_font.render(number, True, number_color)
             number_x = card_rect.x + (card_width - number_surface.get_width()) // 2
             number_y = card_rect.y + (card_height - number_surface.get_height()) // 2
             screen.blit(number_surface, (number_x, number_y))
 
-    # Computer Player 1 (Left, stacked)
+    # Computer Player 1 (Left, stacked into two columns)
+    player1_cards_obj = game_manager.players[1]
+    player1_cards = game_manager.format_card_list(player1_cards_obj)
     player1_title = subtitle_font.render("Player 1", True, (255, 255, 255))
-    player1_title_x = 50
+    player1_title_x = 55
     player1_title_y = SCREEN_HEIGHT // 4 - 60
     screen.blit(player1_title, (player1_title_x, player1_title_y))
 
-    player1_cards = player_cards[1]
+    player1_start_x = 50
+    player1_start_y = SCREEN_HEIGHT // 4
+
     for i, card in enumerate(player1_cards):
+        col = i // 10
+        row = i % 10
+
         color_name, number = card.split()
         card_color = pygame.Color(card_colors[color_name])
 
-        # Card rectangle (stacked slightly offset vertically)
-        card_rect = pygame.Rect(50, SCREEN_HEIGHT // 4 + i * 20, card_width, card_height)
+        card_x = player1_start_x + col * (card_width + card_gap)
+        card_y = player1_start_y + row * 40
+        card_rect = pygame.Rect(card_x, card_y, card_width, card_height)
         pygame.draw.rect(screen, card_color, card_rect, border_radius=10)
 
-        # Render the number on the card
         number_color = "black" if color_name in ["yellow", "green"] else "white"
-        number_surface = card_font.render(number, True, number_color)
-        number_x = card_rect.x + (card_width - number_surface.get_width()) // 2
-        number_y = card_rect.y + (card_height - number_surface.get_height()) // 2
+        number_surface = card_number_font.render(number, True, number_color)
+        number_x = card_rect.x + card_width - number_surface.get_width() - 5
+        number_y = card_rect.y + 5
         screen.blit(number_surface, (number_x, number_y))
 
-    # Computer Player 2 (Right, stacked)
-    player2_title = subtitle_font.render("Player 2", True, (255, 255, 255))
-    player2_title_x = SCREEN_WIDTH - 50 - player2_title.get_width()
-    player2_title_y = SCREEN_HEIGHT // 4 - 60
-    screen.blit(player2_title, (player2_title_x, player2_title_y))
+    # Show Player 2 cards only if total_players == 3
+    if total_players == 3:
+        player2_cards_obj = game_manager.players[2]
+        player2_cards = game_manager.format_card_list(player2_cards_obj)
+        player2_title = subtitle_font.render("Player 2", True, (255, 255, 255))
+        player2_title_x = SCREEN_WIDTH - 135 - player2_title.get_width()
+        player2_title_y = SCREEN_HEIGHT // 4 - 60
+        screen.blit(player2_title, (player2_title_x, player2_title_y))
 
-    player2_cards = player_cards[2]
-    for i, card in enumerate(player2_cards):
-        color_name, number = card.split()
-        card_color = pygame.Color(card_colors[color_name])
+        player2_start_x = SCREEN_WIDTH - 50 - (2 * (card_width + card_gap))
+        player2_start_y = SCREEN_HEIGHT // 4
 
-        # Card rectangle (stacked slightly offset vertically)
-        card_rect = pygame.Rect(SCREEN_WIDTH - 50 - card_width, SCREEN_HEIGHT // 4 + i * 20, card_width, card_height)
-        pygame.draw.rect(screen, card_color, card_rect, border_radius=10)
+        for i, card in enumerate(player2_cards):
+            col = i // 10
+            row = i % 10
 
-        # Render the number on the card
-        number_color = "black" if color_name in ["yellow", "green"] else "white"
-        number_surface = card_font.render(number, True, number_color)
-        number_x = card_rect.x + (card_width - number_surface.get_width()) // 2
-        number_y = card_rect.y + (card_height - number_surface.get_height()) // 2
-        screen.blit(number_surface, (number_x, number_y))
+            color_name, number = card.split()
+            card_color = pygame.Color(card_colors[color_name])
 
+            card_x = player2_start_x + col * (card_width + card_gap)
+            card_y = player2_start_y + row * 40
+            card_rect = pygame.Rect(card_x, card_y, card_width, card_height)
+            pygame.draw.rect(screen, card_color, card_rect, border_radius=10)
+
+            number_color = "black" if color_name in ["yellow", "green"] else "white"
+            number_surface = card_number_font.render(number, True, number_color)
+            number_x = card_rect.x + card_width - number_surface.get_width() - 5
+            number_y = card_rect.y + 5
+            screen.blit(number_surface, (number_x, number_y))
+
+
+def show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message):
+    print("Message: ", message)
+    overlay_width = 400
+    overlay_height = 100
+    overlay_x = (SCREEN_WIDTH - overlay_width) // 2
+    overlay_y = (SCREEN_HEIGHT - overlay_height) // 2
+
+    overlay_surface = pygame.Surface((overlay_width, overlay_height), pygame.SRCALPHA)
+    overlay_surface.fill((0, 0, 0, 150))
+    screen.blit(overlay_surface, (overlay_x, overlay_y))
+
+    font_path = pygame.font.match_font("arial")
+    message_font = pygame.font.Font(font_path, 16)
+    message_surface = message_font.render(message, True, (255, 255, 255))
+    message_x = overlay_x + (overlay_width - message_surface.get_width()) // 2
+    message_y = overlay_y + (overlay_height - message_surface.get_height()) // 2
+    screen.blit(message_surface, (message_x, message_y))
+
+    pygame.display.flip()
+
+    # Pause for 1 second
+    time.sleep(1)
+
+
+def show_winner_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, winner_name):
+    overlay_width = 600
+    overlay_height = 200
+    overlay_x = (SCREEN_WIDTH - overlay_width) // 2
+    overlay_y = (SCREEN_HEIGHT - overlay_height) // 2
+
+    overlay_surface = pygame.Surface((overlay_width, overlay_height), pygame.SRCALPHA)
+    overlay_surface.fill((0, 0, 0, 150))  # Black with transparency
+    screen.blit(overlay_surface, (overlay_x, overlay_y))
+
+    font_path = pygame.font.match_font("arial")
+    title_font = pygame.font.Font(font_path, 28)
+    button_font = pygame.font.Font(font_path, 18)
+
+    winner_text = f"{winner_name} Wins!"
+    winner_surface = title_font.render(winner_text, True, (255, 255, 255))  # White text
+    winner_x = overlay_x + (overlay_width - winner_surface.get_width()) // 2
+    winner_y = overlay_y + 40
+    screen.blit(winner_surface, (winner_x, winner_y))
+
+    button_width = 200
+    button_height = 50
+    button_x = overlay_x + (overlay_width - button_width) // 2
+    button_y = overlay_y + overlay_height - 80
+
+    global home_button_rect 
+    home_button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+    pygame.draw.rect(screen, "#6A994E", home_button_rect, border_radius=10)
+    home_text = button_font.render("Home", True, (255, 255, 255))
+    home_text_x = button_x + (button_width - home_text.get_width()) // 2
+    home_text_y = button_y + (button_height - home_text.get_height()) // 2
+    screen.blit(home_text, (home_text_x, home_text_y))
+
+    pygame.display.flip()
 
 
 def handle_button_click(mouse_pos):
@@ -348,44 +499,147 @@ def handle_button_click(mouse_pos):
     return None
 
 
-def handle_play_screen_click(mouse_pos):
+def handle_play_screen_click(mouse_pos, total_players):
     if option_1_rect.collidepoint(mouse_pos):
-        print("Selected 1 Computer Player")
+        return ("option", 2)
     elif option_2_rect.collidepoint(mouse_pos):
-        print("Selected 2 Computer Players")
+        return ("option", 3)
     elif start_button_rect.collidepoint(mouse_pos):
-        return "board"
+        if total_players > 1:
+            return "board"
+        else:
+            return "error"  # Return error state if no valid selection is made
     elif home_button_rect.collidepoint(mouse_pos):
         return "start"
+
+
+def update_game_state(game_manager, total_players):
+    """Fetch the updated game state from the backend and update frontend variables."""
+    global human_cards, player1_cards, player2_cards, deck_count, current_turn
+
+    # Fetch cards for each player
+    human_cards = game_manager.format_card_list(game_manager.players[0])
+    player1_cards = game_manager.format_card_list(game_manager.players[1])
+    if total_players == 3:
+        player2_cards = game_manager.format_card_list(game_manager.players[2])
+    else:
+        player2_cards = []
+
+    # Fetch deck count
+    deck_count = len(game_manager.deck.cards)
+
+    # Update the current player
+    current_turn = game_manager.players[game_manager.current_player]
+
+
+def handle_human_player_action(game_manager, current_turn, action):
+    """Handle the human player's action based on button input."""
+    if action == "Draw Cards":
+        game_manager.draw_cards(current_turn, 2)  # Example: draw 2 cards
+    elif action == "Steal Card":
+        target_player = game_manager.choose_target_player(current_turn)
+        game_manager.take_random_card(target_player, current_turn)
+    elif action == "Discard Group":
+        largest_group = game_manager.find_largest_valid_group(current_turn.hand)
+        if largest_group:
+            game_manager.discard_group(current_turn, largest_group)
+    elif action == "Pass Turn":
+        pass
+
+
+def handle_computer_turn(game_manager, current_turn):
+    """Handle the computer player's turn."""
+    action_message = game_manager.handle_computer_turn(current_turn)
+    return action_message
+
+
+def switch_turn(game_manager):
+    game_manager.next_turn()
+
+
+def render_game_state(screen,game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT):
+    update_game_state(game_manager, total_players)
+    main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players)
+
 
 def handle_main_board_screen_click(mouse_pos):
     if back_to_home_rect.collidepoint(mouse_pos):
         return "start"
 
 
+def handle_human_buttons(mouse_pos):
+    if human_button_rects[0].collidepoint(mouse_pos):
+        return "Draw Cards"
+    elif human_button_rects[1].collidepoint(mouse_pos):
+        return "Steal Card"
+    elif human_button_rects[2].collidepoint(mouse_pos):
+        return "Discard Group"
+    elif human_button_rects[3].collidepoint(mouse_pos):
+        return "Pass Turn"
+    elif human_button_rects[4].collidepoint(mouse_pos):
+        return "start"
+
+
+def handle_turn(
+    screen, game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT, event
+):
+    """Handle the current player's turn."""
+    global current_turn
+    current_turn = game_manager.players[game_manager.current_player]
+    print(current_turn.name)
+
+    if current_turn.is_computer:
+        # backend computer actions
+        message = handle_computer_turn(game_manager, current_turn)
+        show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message)
+        switch_turn(game_manager)
+    else:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+            action = handle_human_buttons(mouse_pos)
+            print(action)
+            if action:
+                handle_human_player_action(game_manager, current_turn, action)
+                switch_turn(game_manager)
+
+    # Render the updated game state
+    render_game_state(screen, game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT)
+
+
 def main():
     # Pygame setup
     pygame.init()
-    screen = pygame.display.set_mode((1280, 720))
+    screen = pygame.display.set_mode((1500, 800))
     clock = pygame.time.Clock()
     running = True
+    total_players = 0
     SCREEN_WIDTH = screen.get_width()
     SCREEN_HEIGHT = screen.get_height()
+    global mouse_pos
+
+    # Initialize the game manager
+    global game_manager
+    game_manager = GameManager()
 
     # Load and scale the background image
     background_image = pygame.image.load("main-bg.jpg")
-    background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
-    current_screen = "start"  # Track current screen
+    background_image = pygame.transform.scale(
+        background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)
+    )
+    current_screen = "start"
+    winner = None 
+    error_message = None
+    next_turn_delay = 1000
+    next_turn_time = None
 
     while running:
+        current_time = pygame.time.get_ticks()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-            # Handle button clicks
-            if (
-                event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
-            ):  # Left mouse button
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
                 if current_screen == "start":
                     action = handle_button_click(mouse_pos)
@@ -394,27 +648,78 @@ def main():
                     elif action == "exit":
                         running = False
                 elif current_screen == "play":
-                    action = handle_play_screen_click(mouse_pos)
+                    action = handle_play_screen_click(mouse_pos, total_players)
                     if action == "start":
                         current_screen = "start"
-                    elif action == "board":
+                    elif action == "error":
+                        error_message = (
+                            "Please select an option before starting the game!"
+                        )
+                    elif action == "board" and total_players > 1:
+                        # Game Start
+                        game_manager.add_players(total_players, "Human Player")
+                        game_manager.start_game()
+                        next_turn_time = current_time + next_turn_delay
                         current_screen = "board"
+                    elif isinstance(action, tuple):
+                        total_players = action[1]
                 elif current_screen == "board":
-                    action = handle_main_board_screen_click(mouse_pos)
-                    if action == "start":
+                    back_home_action = handle_main_board_screen_click(mouse_pos)
+                    if back_home_action == "start":
                         current_screen = "start"
+                    # Action Humaan
+                    if not game_manager.players[
+                        game_manager.current_player
+                    ].is_computer:
+                        handle_turn(
+                            screen,
+                            game_manager,
+                            total_players,
+                            SCREEN_WIDTH,
+                            SCREEN_HEIGHT,
+                            event,
+                        )
+                        if game_manager.players[
+                            game_manager.current_player
+                        ].is_computer:
+                            next_turn_time = current_time + next_turn_delay
 
+        if (
+            current_screen == "board"
+            and next_turn_time is not None
+            and current_time >= next_turn_time
+        ):
+            # computer check
+            if game_manager.players[game_manager.current_player].is_computer:
+                handle_turn(
+                    screen,
+                    game_manager,
+                    total_players,
+                    SCREEN_WIDTH,
+                    SCREEN_HEIGHT,
+                    None,
+                )
+                if not game_manager.players[game_manager.current_player].is_computer:
+                    next_turn_time = None  # human action waitss
+        
+        # Check for winner
+        if current_screen == "board" and not winner:
+            winner = game_manager.check_winner()
+            if winner:
+                show_winner_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, winner.name)
 
-        # Render background image
+        # Render current screen
         screen.blit(background_image, (0, 0))
-
-        # Render the current screen
         if current_screen == "start":
             start_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT)
         elif current_screen == "play":
-            play_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT)
+            play_screen(
+                screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players, error_message
+            )
         elif current_screen == "board":
-            main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT)
+            render_game_state(
+                screen, game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT
+            )
 
         pygame.display.flip()
         clock.tick(60)

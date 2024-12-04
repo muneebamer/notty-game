@@ -14,57 +14,70 @@ class Card:
         return f"Card({self.color}, {self.number})"
 
 
-# Define the Deck class
 class Deck:
     def __init__(self):
-        self.cards = [
-            Card(color, number) for color in ["red", "blue", "green", "yellow"] for number in range(1, 11)
-        ] * 2  # Two of each card
-        random.shuffle(self.cards)
-        self.discards = []  # Discard pile
-
-    def draw(self, num_cards):
-        """
-        Draws the requested number of cards from the deck.
-        If the deck is empty, reshuffles the discard pile back into the deck.
-        """
-        if len(self.cards) < num_cards:
-            self._reshuffle_discard_pile()
-
-        return [self.cards.pop() for _ in range(min(num_cards, len(self.cards)))]
-
-    def _reshuffle_discard_pile(self):
-        """
-        Shuffles the discard pile back into the main deck.
-        """
-        if self.discards:
-            self.cards.extend(self.discards)
-            random.shuffle(self.cards)
-            self.discards.clear()
-
-    def add_to_discard(self, cards):
-        """
-        Adds discarded cards to the discard pile.
-        """
-        self.discards.extend(cards)
-
-
-# Define the Player class
-class Player:
-    def __init__(self, name, is_human=True):
-        self.name = name
-        self.is_human = is_human
         self.cards = []
+        self.initialize_deck()
+
+    def initialize_deck(self):
+        colors = ["red", "blue", "green", "yellow"]
+        for color in colors:
+            for number in range(1, 11):
+                self.cards.extend([Card(color, number)] * 2)
+
+    def shuffle(self):
+        random.shuffle(self.cards)
+
+    def draw_cards(self, count):
+        drawn = []
+        for _ in range(min(count, len(self.cards))):
+            drawn.append(self.cards.pop())
+        return drawn
+
+
+class Player:
+    def __init__(self, name, is_computer=False):
+        self.name = name
+        self.hand = []
+        self.is_computer = is_computer
 
     def add_cards(self, cards):
-        self.cards.extend(cards)
+        if len(self.hand) + len(cards) <= 20:
+            self.hand.extend(cards)
+            return True
+        return False
 
-    def remove_cards(self, cards):
-        for card in cards:
-            self.cards.remove(card)
+    def remove_card(self, card):
+        if card in self.hand:
+            self.hand.remove(card)
+            return True
+        return False
+
+
+class GameManager:
+    def __init__(self):
+        self.deck = Deck()
+        self.players = []  #'[[red 1 , red2],[blue 1 ]] '
+        self.current_player = 0
+        self.actions_this_turn = {"draw": False, "take_card": False}
+
+    def add_players(self, num_players, human_name):
+        self.players.append(Player(human_name, False))
+        for i in range(num_players - 1):
+            self.players.append(Player(f"Computer {i+1}", True))
+
+    def start_game(self):
+        print("started")
+        self.deck.shuffle()
+        for player in self.players:
+            player.add_cards(self.deck.draw_cards(5))
+
+    def print_hands(self):
+        print("\nCurrent hands:")
+        for player in self.players:
+            print(f"{player.name}:", [str(card) for card in player.hand])
 
     def is_valid_group(self, collection):
-        """Checks if the collection of cards is a valid group."""
         if len(collection) < 3:
             return False
 
@@ -72,7 +85,9 @@ class Player:
         numbers = sorted(card.number for card in collection)
 
         # Case 1: All cards have the same color and consecutive numbers
-        if len(colors) == 1 and all(numbers[i] + 1 == numbers[i + 1] for i in range(len(numbers) - 1)):
+        if len(colors) == 1 and all(
+            numbers[i] + 1 == numbers[i + 1] for i in range(len(numbers) - 1)
+        ):
             return True
 
         # Case 2: All cards have the same number and different colors
@@ -81,209 +96,307 @@ class Player:
 
         return False
 
-    def find_valid_group(self):
-        """Finds a valid group in the player's collection."""
-        if len(self.cards) < 3:
+    def find_valid_group(self, cards):
+        if len(cards) < 3:
             return None
 
-        colors = [card.color for card in self.cards]
-        numbers = [card.number for card in self.cards]
+        colors = [card.color for card in cards]
+        numbers = [card.number for card in cards]
 
         # Case 1: Group with the same number and different colors
         for num in set(numbers):
-            same_number_cards = [card for card in self.cards if card.number == num]
-            if len(same_number_cards) >= 3 and len({card.color for card in same_number_cards}) == len(same_number_cards):
+            same_number_cards = [card for card in cards if card.number == num]
+            if len(same_number_cards) >= 3 and len(
+                {card.color for card in same_number_cards}
+            ) == len(same_number_cards):
                 return same_number_cards
 
         # Case 2: Group with the same color and consecutive numbers
         for color in set(colors):
-            same_color_cards = sorted((card for card in self.cards if card.color == color), key=lambda x: x.number)
+            same_color_cards = sorted(
+                (card for card in cards if card.color == color), key=lambda x: x.number
+            )
             for i in range(len(same_color_cards) - 2):
-                if (same_color_cards[i].number + 1 == same_color_cards[i + 1].number and
-                        same_color_cards[i + 1].number + 1 == same_color_cards[i + 2].number):
-                    return same_color_cards[i:i + 3]
+                if (
+                    same_color_cards[i].number + 1 == same_color_cards[i + 1].number
+                    and same_color_cards[i + 1].number + 1
+                    == same_color_cards[i + 2].number
+                ):
+                    return same_color_cards[i : i + 3]
 
         return None
 
-    def find_largest_valid_group(self):
-        """Finds the largest valid group in the player's collection."""
+    def find_largest_valid_group(self, cards):
+        temp_cards = cards.copy()
         largest_group = []
+
         while True:
-            valid_group = self.find_valid_group()
+            valid_group = self.find_valid_group(temp_cards)
             if valid_group and len(valid_group) > len(largest_group):
                 largest_group = valid_group
                 for card in valid_group:
-                    self.cards.remove(card)
+                    temp_cards.remove(card)
             else:
                 break
-        return largest_group or None
 
-    def steal_card(self, target_player):
-        """Steals a random card from another player and adds it to the current player's cards."""
-        if target_player.cards:
-            stolen_card = random.choice(target_player.cards)
-            target_player.remove_cards([stolen_card])
-            self.add_cards([stolen_card])  # Add the stolen card to the current player's cards
-            return stolen_card
-        return None
+        return largest_group if largest_group else None
 
+    def draw_cards(self, player, count):
+        drawn = self.deck.draw_cards(count)
+        if player.add_cards(drawn):
+            self.actions_this_turn["draw"] = True
+            return True
+        return False
 
-    
+    def take_random_card(self, from_player, to_player):
+        if from_player.hand:
+            card = random.choice(from_player.hand)
+            if from_player.remove_card(card):
+                if to_player.add_cards([card]):
+                    self.actions_this_turn["take_card"] = True
+                    return True
+        return False
 
+    def discard_group(self, player, cards):
+        # no need of validating twicw as it is chekd during finding largest valid group
+        # if self.is_valid_group(cards):
+        for card in cards:
+            if not player.remove_card(card):
+                return False
+        self.deck.cards.extend(cards)
+        self.deck.shuffle()
+        return True
+        # return False
 
-# Define the Game class
-class Game:
-    def __init__(self):
-        self.deck = Deck()
-        self.players = [Player("Player 1", True), Player("Computer 1", False), Player("Computer 2", False)]
-        self.current_player_idx = 0
-        self.message = ""
+    def handle_computer_turn(self, computer):
+        action_message = f"{computer.name} took an action!"
+        print(f"\n{computer.name}'s action:")
 
-    def next_player(self):
-        self.current_player_idx = (self.current_player_idx + 1) % len(self.players)
+        # here i created a list which store 4 actions from
+        # which any 1 random choices can be made by computers
+        possible_actions = []
+
+        if len(computer.hand) < 20:
+            possible_actions.extend(["draw", "take"])
+
+        # this one takes cares of the edge case as if ther
+        # is no cards to discard so computer doesnt have options to play discard action
+        if self.find_largest_valid_group(computer.hand):
+            possible_actions.append("discard")
+
+        # addded for skip
+        possible_actions.append("skip")
+
+        if possible_actions:
+            action = random.choice(possible_actions)
+            if action == "draw":
+                draw_count = random.randint(1, 3)
+                initial_size = len(computer.hand)
+                if self.draw_cards(computer, draw_count):
+                    cards_drawn = len(computer.hand) - initial_size
+                    print(f"- Draws {cards_drawn} cards")
+            elif action == "take":
+                opponents = [p for p in self.players if p != computer]
+                target = random.choice(opponents)
+                if self.take_random_card(target, computer):
+                    print(f"- Takes a random card from {target.name}")
+            elif action == "discard":
+                largest_group = self.find_largest_valid_group(computer.hand)
+                if largest_group and self.discard_group(computer, largest_group):
+                    print(f"- Discards {len(largest_group)} cards as a group")
+            elif action == "skip":
+                print("- passes turn")
+
+        else:
+            print("- Passes turn")
+            action_message = "Bot passed"
+            return action_message
+
+        return action_message
+
+    def choose_target_player(self, current_player):
+        opponents = [p for p in self.players if p != current_player]
+        if len(opponents) == 1:
+            return opponents[0]
+
+        print("\nChoose opponent:")
+        for i in range(len(opponents)):
+            print(f"{i + 1} - {opponents[i].name}")
+
+        while True:
+            try:
+                choice = int(input("Enter opponent number: "))
+                if 1 <= choice <= len(opponents):
+                    return opponents[choice - 1]
+                print("Invalid opponent number, please try again.")
+            except ValueError:
+                print("Please enter a valid number.")
+
+    def next_turn(self):
+        self.current_player = (self.current_player + 1) % len(self.players)
+        self.actions_this_turn = {"draw": False, "take_card": False}
+
+    def format_card_list(self, card_objects):
+        return [str(card) for card in card_objects.hand]
+
+    def format_deck_list(self, card_objects):
+        return [f"{card.color} {card.number}" for card in card_objects]
 
     def check_winner(self):
         for player in self.players:
-            if not player.cards:
+            if len(player.hand) == 0:
                 return player
         return None
 
-    def draw_cards(self, player, num_cards):
-        """Draw cards for a player."""
-        if num_cards <= 3:
-            drawn_cards = self.deck.draw(num_cards)
-            player.add_cards(drawn_cards)
-            self.message = f"{player.name} drew {num_cards} card(s)"
-        else:
-            self.message = "You can draw up to 3 cards"
 
-    def take_card_from_another_player(self, current_player, target_player):
-        """Steal a random card from another player."""
-        stolen_card = current_player.steal_card(target_player)
-        if stolen_card:
-            self.message = f"{current_player.name} stole {stolen_card} from {target_player.name}"
-
-    def discard_largest_valid_group(self, player):
-        """Discard the largest valid group."""
-        largest_group = player.find_largest_valid_group()
-        if largest_group:
-            self.deck.add_to_discard(largest_group)
-            self.message = f"{player.name} discarded the largest valid group: {largest_group}"
-        else:
-            self.message = f"{player.name} has no valid group to discard"
+def show_available_actions():
+    print("\nAvailable actions:")
+    print("1 - Draw cards (1-3)")
+    print("2 - Take random card from opponent")
+    print("3 - Discard largest valid group")
+    print("4 - Pass turn")
+    print("5 - Play for me ")
 
 
-# Function to print the current game state
-def print_game_state(game):
-    print("\nCurrent Game State:")
-    for i, player in enumerate(game.players):
-        print(f"\n{player.name}'s cards:")
-        for card in player.cards:
-            print(card)
-    print(f"\nMessage: {game.message}")
-
-
-# Function to prompt the human player for input
-def human_player_turn(game, current_player):
-    print(f"\n{current_player.name}'s turn!")
-
-    #select action
-    action=input("""
-    
-    1. Draw Cards
-    2. Steal a random card from a player
-    3. Discard valid group of cards
-    4. Skip turn
-
-    Which action would you like to take? (1, 2, 3, 4)
-    """)
-    if action in ["1", "2", "3", "4"]:
-        if action =="1":
-            draw_choice = input("How many cards do you want to draw? (1, 2, 3): ")
-            if draw_choice in ["1", "2", "3"]:
-                game.draw_cards(current_player, int(draw_choice))
-            else:
-                print("Invalid choice. You can only draw up to 3 cards.")
-                return
-        elif action=="2":
-            target_player = choose_target_player(game, current_player)
-            game.take_card_from_another_player(current_player, target_player)
-        elif action=="3":
-            game.discard_largest_valid_group(current_player)
-        elif action=="4":
-            print(f"{current_player.name} skipped their turn.")
-    else:
-        print("Invalid action. You can only choose to an option between 1-4.")
-
-
-def choose_target_player(game, current_player):
-    """Helper function for the human player to select a target player for stealing."""
-    print("\nChoose a player to steal from:")
-    available_targets = [player for player in game.players if player != current_player]
-    for idx, target in enumerate(available_targets):
-        print(f"{idx + 1}. {target.name}")
-    target_choice = int(input("Enter the number of the player you want to steal from: ")) - 1
-    return available_targets[target_choice]
-
-
-# Main game loop
 def main():
-    print("Welcome to the Notty Card Game!")
+    game = GameManager()
+
     while True:
         try:
-            num_computers = int(input("How many computer opponents would you like to play against? (1 or 2): "))
-            if num_computers not in [1, 2]:
-                print("Invalid choice. Please enter 1 or 2.")
-                continue
-            break
+            num_players = int(input("Enter number of players (2-3): "))
+            if 2 <= num_players <= 3:
+                break
+            print("Please enter 2 or 3")
         except ValueError:
-            print("Invalid input. Please enter a number.")
+            print("Please enter a valid number")
 
-    # Create players dynamically based on user choice
-    players = [Player("Player 1", True)]  # Human player
-    for i in range(num_computers):
-        players.append(Player(f"Computer {i + 1}", False))
-    
-    # Initialize the game
-    game = Game()
-    game.players = players  # Update players in the game
-    running = True
+    player_name = input("Enter your name: ").strip()
+    if not player_name:
+        player_name = "Human_Player"
 
-    # Initial card distribution
-    for player in game.players:
-        player.add_cards(game.deck.draw(5))
+    game.add_players(num_players, player_name)
+    game.start_game()
+    print("\n=== Game Start ===")
+    game.print_hands()
 
-    while running:
-        current_player = game.players[game.current_player_idx]
+    # game starts here after asking number of players and human player name
+    while True:
+        current_player = game.players[game.current_player]
+        print(f"\n=== {current_player.name}'s Turn ===")
 
-        # Print the current game state
-        print_game_state(game)
-
-        if current_player.is_human:
-            human_player_turn(game, current_player)
+        if current_player.is_computer:
+            game.handle_computer_turn(current_player)
+            game.print_hands()
         else:
-            print(f"\n{current_player.name}'s turn (Computer)!")
-            # Simulate computer player actions
-            action = random.choice([1, 2, 3, 4])  # Random action
-            if action == 1:
-                game.draw_cards(current_player, random.randint(1, 3))
-            elif action == 2:
-                target_player = random.choice([player for player in game.players if player != current_player])
-                game.take_card_from_another_player(current_player, target_player)
-            elif action == 3:
-                game.discard_largest_valid_group(current_player)
-            elif action == 4:
-                print(f"{current_player.name} skipped their turn.")
+            show_available_actions()
+            while True:
+                choice = input("\nEnter your choice (1-5): ").strip()
 
-        # Check for winner
+                if choice not in ["1", "2", "3", "4", "5"]:
+                    print("Invalid choice. Please enter a number between 1-5")
+                    continue
+
+                if choice == "1":
+                    try:
+                        count = int(input("How many cards to draw (1-3)? "))
+                        if 1 <= count <= 3:
+                            if game.draw_cards(current_player, count):
+                                print(f"Drew {count} cards")
+                                game.print_hands()
+                                break
+                            else:
+                                print("Cannot draw cards")
+                        else:
+                            print("Please enter a number between 1 and 3")
+                    except ValueError:
+                        print("Please enter a valid number")
+
+                # when taking 1 card form random opponent
+                elif choice == "2":
+                    # opponents = [p for p in game.players if p != current_player]
+                    target = game.choose_target_player(current_player)
+                    if game.take_random_card(target, current_player):
+                        print(f"Took a random card from {target.name}")
+                        game.print_hands()
+                        break
+                    else:
+                        print("Cannot take card")
+
+                elif choice == "3":
+                    largest_group = game.find_largest_valid_group(current_player.hand)
+                    if largest_group:
+                        if game.discard_group(current_player, largest_group):
+                            print(f"Discarded {len(largest_group)} cards")
+                            game.print_hands()
+                            break
+                        else:
+                            print("Cannot discard group")
+                    else:
+                        print("No valid group to discard")
+
+                elif choice == "4":
+                    print("Turn passed")
+                    break
+
+                elif choice == "5":
+                    print("Playing for you...")
+                    possible_actions = ["1", "2", "3", "4"]
+                    random_action = random.choice(possible_actions)
+                    print(f"Random action chosen: {random_action}")
+                    choice = random_action  # Reassign to perform the random action
+                    if choice == "1":
+                        try:
+                            count = random.randint(1, 3)
+                            if 1 <= count <= 3:
+                                if game.draw_cards(current_player, count):
+                                    print(f"Drew {count} cards")
+                                    game.print_hands()
+                                    break
+                                else:
+                                    print("Cannot draw cards")
+                            else:
+                                print("Please enter a number between 1 and 3")
+                        except ValueError:
+                            print("Please enter a valid number")
+                        continue  # Restart the loop to handle the chosen random action
+
+                    # when taking 1 card form random opponent
+                    elif choice == "2":
+                        opponents = [p for p in game.players if p != current_player]
+                        target = random.choice(opponents)
+                        if game.take_random_card(target, current_player):
+                            print(f"Took a random card from {target.name}")
+                            game.print_hands()
+                            break
+                        else:
+                            print("Cannot take card")
+
+                    elif choice == "3":
+                        largest_group = game.find_largest_valid_group(
+                            current_player.hand
+                        )
+                        if largest_group:
+                            if game.discard_group(current_player, largest_group):
+                                print(f"Discarded {len(largest_group)} cards")
+                                game.print_hands()
+                                break
+                            else:
+                                print("Cannot discard group")
+                        else:
+                            print("No valid group to discard")
+
+                    elif choice == "4":
+                        print("Turn passed")
+                        break
+
         winner = game.check_winner()
         if winner:
-            print(f"\n{winner.name} wins!")
-            running = False
-        else:
-            game.next_player()
+            print(f"\n=== Game Over ===")
+            print(f"{winner.name} wins!")
+            break
+
+        game.next_turn()
 
 
-# Run the game
 if __name__ == "__main__":
     main()
