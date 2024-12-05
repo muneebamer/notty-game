@@ -252,6 +252,11 @@ class GameManager:
         return None
 
 
+
+
+
+
+
 def show_available_actions():
     print("\nAvailable actions:")
     print("1 - Draw cards (1-3)")
@@ -259,6 +264,11 @@ def show_available_actions():
     print("3 - Discard largest valid group")
     print("4 - Pass turn")
     print("5 - Play for me ")
+
+
+
+
+
 
 
 def main():

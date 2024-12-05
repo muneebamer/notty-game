@@ -2,6 +2,7 @@ import pygame
 import sys
 import time
 from backend import GameManager
+import random
 
 
 def start_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
@@ -717,6 +718,19 @@ def update_game_state(game_manager, total_players):
 
 
 def handle_human_player_action(game_manager, current_turn, action, total_players):
+    if action == "Play for me":
+        possible_actions = ["Draw Cards", "Steal Card", "Discard Group", "Pass Turn"]
+        while True:
+            random_action = random.choice(possible_actions)
+            # If selected action is Discard Group, check if valid groups exist
+            if random_action == "Discard Group":
+                largest_group = game_manager.find_largest_valid_group(current_turn.hand)
+                if not largest_group:
+                    # Remove Discard Group from possible actions and try again
+                    possible_actions.remove("Discard Group")
+                    continue
+            return handle_human_player_action(game_manager, current_turn, random_action, total_players)
+        
     if action == "Draw Cards":
         option_selected = draw_cards_dialog()
         if option_selected:
@@ -952,7 +966,7 @@ def handle_human_buttons(mouse_pos):
     elif human_button_rects[3].collidepoint(mouse_pos):
         return "Pass Turn"
     elif human_button_rects[4].collidepoint(mouse_pos):
-        return "start"
+        return "Play for me"
 
 def handle_game_rules_screen_click(mouse_pos):
     if home_button_rect.collidepoint(mouse_pos):
