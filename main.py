@@ -731,33 +731,61 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
                     possible_actions.remove("Discard Group")
                     continue
             return handle_human_player_action(game_manager, current_turn, random_action, total_players)
-        
+
+
     if action == "Draw Cards":
-        option_selected = draw_cards_dialog()
-        if option_selected:
-            game_manager.draw_cards(current_turn, option_selected)
-            message = f"{option_selected} cards added to your deck"
-            show_action_screen(
-                screen,
-                SCREEN_WIDTH,
-                SCREEN_HEIGHT,
-                message,
-                1.5
-            )
+            option_selected = draw_cards_dialog()
+            if option_selected:
+
+                if len(current_turn.hand) + option_selected <= 20:
+                    game_manager.draw_cards(current_turn, option_selected)
+                    message = f"{option_selected} cards added to your deck"
+                    show_action_screen(
+                                screen,
+                                SCREEN_WIDTH,
+                                SCREEN_HEIGHT,
+                                message,
+                                1.5
+                            )
+                else :
+                    message= f"you have {len(current_turn.hand)} cards in deck...cant draaw"
+                    show_action_screen(
+                                screen,
+                                SCREEN_WIDTH,
+                                SCREEN_HEIGHT,
+                                message,
+                                1.5
+                            )
+                    return handle_human_player_action(game_manager, current_turn, action, total_players)
+       
+    ##improve here  
     elif action == "Steal Card":
         if total_players > 2:
             choice = steal_card_dialog(total_players)
             if choice:
                 target_player = game_manager.choose_target_player(current_turn, choice)
-                game_manager.take_random_card(target_player, current_turn)
-                message = f"You stole a card from {target_player.name}"
-                show_action_screen(
-                screen,
-                SCREEN_WIDTH,
-                SCREEN_HEIGHT,
-                message,
-                1.5
-            )
+                if len(current_turn.hand)!=20:
+                    game_manager.take_random_card(target_player, current_turn)
+                    message = f"You stole a card from {target_player.name}"
+                    show_action_screen(
+                    screen,
+                    SCREEN_WIDTH,
+                    SCREEN_HEIGHT,
+                    message,
+                    1.5
+                )
+                else:
+                    message = "you have 20 cards, cant draw"
+                    show_action_screen(
+                    screen,
+                    SCREEN_WIDTH,
+                    SCREEN_HEIGHT,
+                    message,
+                    1.5
+                )
+                    return handle_human_player_action(game_manager, current_turn, action, total_players)
+
+                    
         else:
             target_player = game_manager.choose_target_player(current_turn, 2)
             game_manager.take_random_card(target_player, current_turn)
