@@ -109,36 +109,32 @@ class GameManager:
         colors = [card.color for card in cards]
         numbers = [card.number for card in cards]
 
+        largest_group = []
+
         # Case 1: Group with the same number and different colors
         for num in sorted(set(numbers)):
             same_number_cards = [card for card in cards if card.number == num]
             if len(same_number_cards) >= 3 and len({card.color for card in same_number_cards}) == len(same_number_cards):
-                return same_number_cards
+                if len(same_number_cards) > len(largest_group):
+                    largest_group = same_number_cards
 
         # Case 2: Group with the same color and consecutive numbers
         for color in sorted(set(colors)):
             same_color_cards = sorted(
                 (card for card in cards if card.color == color), key=lambda x: x.number
             )
-            longest_consecutive_group = []
-            current_group = []
-
+            consecutive_group = []
             for i in range(len(same_color_cards)):
                 if i == 0 or same_color_cards[i].number == same_color_cards[i - 1].number + 1:
-                    current_group.append(same_color_cards[i])
+                    consecutive_group.append(same_color_cards[i])
                 else:
-                    if len(current_group) > len(longest_consecutive_group):
-                        longest_consecutive_group = current_group
-                    current_group = [same_color_cards[i]]
+                    if len(consecutive_group) >= 3 and len(consecutive_group) > len(largest_group):
+                        largest_group = consecutive_group
+                    consecutive_group = [same_color_cards[i]]
+            if len(consecutive_group) >= 3 and len(consecutive_group) > len(largest_group):
+                largest_group = consecutive_group
 
-            # Final check after the loop
-            if len(current_group) > len(longest_consecutive_group):
-                longest_consecutive_group = current_group
-
-            if len(longest_consecutive_group) >= 3:
-                return longest_consecutive_group
-
-        return None
+        return largest_group if largest_group else None
 
     def find_largest_valid_group(self, cards):
         temp_cards = cards.copy()
@@ -155,6 +151,8 @@ class GameManager:
                 break
 
         return largest_group if largest_group else None
+
+
 
 
     def draw_cards(self, player, count):
