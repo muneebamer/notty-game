@@ -200,7 +200,7 @@ def play_screen(
 
 
 def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
-    """Render the main game screen."""
+    "Main Game Screen"
     font_path = pygame.font.match_font("arial")
     title_font = pygame.font.Font(font_path, 24)
     subtitle_font = pygame.font.Font(font_path, 24)
@@ -250,10 +250,32 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
     title_y = 20
     screen.blit(title_surface, (title_x, title_y))
 
+    # Current Turn Box
+    current_player = game_manager.players[game_manager.current_player]
+    turn_text = f"Turn: {current_player.name}"
+    turn_surface = button_font.render(turn_text, True, (255, 255, 255))
+
+    # Transparent box dimensions
+    box_width = 200
+    box_height = 50
+    box_x = SCREEN_WIDTH - box_width - 40  # Positioned at the top-right
+    box_y = 20
+
+    # Draw the transparent box
+    box_surface = pygame.Surface((box_width, box_height), pygame.SRCALPHA)
+    box_surface.fill((0, 0, 0, 160))  # Black with some transparency
+    screen.blit(box_surface, (box_x, box_y))
+
+    # Render the turn text
+    text_x = box_x + (box_width - turn_surface.get_width()) // 2
+    text_y = box_y + (box_height - turn_surface.get_height()) // 2
+    screen.blit(turn_surface, (text_x, text_y))
+
+
     # Deck showing top 5 for now
     deck_obj = game_manager.deck.cards
     deck = game_manager.format_deck_list(deck_obj)
-    top_deck_cards = deck[-4:] 
+    top_deck_cards = deck[-4:]
 
     # Deck position and dimensions
     deck_width = 120
@@ -281,10 +303,10 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
         remaining_cards_text, True, (255, 255, 255)
     )
 
-    box_width = deck_width
+    box_width = deck_width + 20
     box_height = 40
-    box_x = deck_x
-    box_y = deck_y + deck_height + 10  # Below deck
+    box_x = deck_x - 10
+    box_y = deck_y + deck_height + 20  # Below deck
 
     box_surface = pygame.Surface((box_width, box_height), pygame.SRCALPHA)
     box_surface.fill((0, 0, 0, 160))  # Black with some transparency
@@ -327,8 +349,9 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
     card_width = 80
     card_height = 100
     card_gap = 10
+    card_gap_col = 14
 
-    human_cards_obj = game_manager.players[0] 
+    human_cards_obj = game_manager.players[0]
     human_cards = game_manager.format_card_list(human_cards_obj)
 
     #    Maximum cards per row
@@ -372,7 +395,7 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
     # Computer Player 1 (Left, stacked into two columns)
     player1_cards_obj = game_manager.players[1]
     player1_cards = game_manager.format_card_list(player1_cards_obj)
-    player1_title = subtitle_font.render("Player 1", True, (255, 255, 255))
+    player1_title = subtitle_font.render("Notty Bot 1", True, (255, 255, 255))
     player1_title_x = 55
     player1_title_y = SCREEN_HEIGHT // 4 - 60
     screen.blit(player1_title, (player1_title_x, player1_title_y))
@@ -387,7 +410,7 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
         color_name, number = card.split()
         card_color = pygame.Color(card_colors[color_name])
 
-        card_x = player1_start_x + col * (card_width + card_gap)
+        card_x = player1_start_x + col * (card_width + card_gap_col)
         card_y = player1_start_y + row * 40
         card_rect = pygame.Rect(card_x, card_y, card_width, card_height)
         pygame.draw.rect(screen, card_color, card_rect, border_radius=10)
@@ -402,8 +425,8 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
     if total_players == 3:
         player2_cards_obj = game_manager.players[2]
         player2_cards = game_manager.format_card_list(player2_cards_obj)
-        player2_title = subtitle_font.render("Player 2", True, (255, 255, 255))
-        player2_title_x = SCREEN_WIDTH - 135 - player2_title.get_width()
+        player2_title = subtitle_font.render("Notty Bot 2", True, (255, 255, 255))
+        player2_title_x = SCREEN_WIDTH - 110 - player2_title.get_width()
         player2_title_y = SCREEN_HEIGHT // 4 - 60
         screen.blit(player2_title, (player2_title_x, player2_title_y))
 
@@ -417,7 +440,7 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
             color_name, number = card.split()
             card_color = pygame.Color(card_colors[color_name])
 
-            card_x = player2_start_x + col * (card_width + card_gap)
+            card_x = player2_start_x + col * (card_width + card_gap_col)
             card_y = player2_start_y + row * 40
             card_rect = pygame.Rect(card_x, card_y, card_width, card_height)
             pygame.draw.rect(screen, card_color, card_rect, border_radius=10)
@@ -429,7 +452,7 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
             screen.blit(number_surface, (number_x, number_y))
 
 
-def show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message):
+def show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, duration):
     print("Message: ", message)
     overlay_width = 400
     overlay_height = 100
@@ -450,7 +473,7 @@ def show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message):
     pygame.display.flip()
 
     # Pause for 1 second
-    time.sleep(1)
+    time.sleep(duration)
 
 
 def show_winner_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, winner_name):
@@ -478,7 +501,7 @@ def show_winner_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, winner_name):
     button_x = overlay_x + (overlay_width - button_width) // 2
     button_y = overlay_y + overlay_height - 80
 
-    global home_button_rect 
+    global home_button_rect
     home_button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
     pygame.draw.rect(screen, "#6A994E", home_button_rect, border_radius=10)
@@ -532,19 +555,210 @@ def update_game_state(game_manager, total_players):
     current_turn = game_manager.players[game_manager.current_player]
 
 
-def handle_human_player_action(game_manager, current_turn, action):
-    """Handle the human player's action based on button input."""
+def handle_human_player_action(game_manager, current_turn, action, total_players):
     if action == "Draw Cards":
-        game_manager.draw_cards(current_turn, 2)  # Example: draw 2 cards
+        option_selected = draw_cards_dialog()
+        if option_selected:
+            game_manager.draw_cards(current_turn, option_selected)
+            message = f"{option_selected} cards added to your deck"
+            show_action_screen(
+                screen,
+                SCREEN_WIDTH,
+                SCREEN_HEIGHT,
+                message,
+                2
+            )
     elif action == "Steal Card":
-        target_player = game_manager.choose_target_player(current_turn)
-        game_manager.take_random_card(target_player, current_turn)
+        if total_players > 2:
+            choice = steal_card_dialog(total_players)
+            if choice:
+                target_player = game_manager.choose_target_player(current_turn, choice)
+                game_manager.take_random_card(target_player, current_turn)
+                message = f"You stole a card from {target_player.name}"
+                show_action_screen(
+                screen,
+                SCREEN_WIDTH,
+                SCREEN_HEIGHT,
+                message,
+                2
+            )
+        else:
+            target_player = game_manager.choose_target_player(current_turn, 2)
+            game_manager.take_random_card(target_player, current_turn)
+            message = f"You stole a card from {target_player.name}"
+            show_action_screen(
+                screen,
+                SCREEN_WIDTH,
+                SCREEN_HEIGHT,
+                message,
+                2
+            )
+
     elif action == "Discard Group":
         largest_group = game_manager.find_largest_valid_group(current_turn.hand)
         if largest_group:
             game_manager.discard_group(current_turn, largest_group)
+            message="You discarded a valid group"
+            show_action_screen(
+                screen,
+                SCREEN_WIDTH,
+                SCREEN_HEIGHT,
+                message,
+                2
+            )
+        else:
+            message = "No valid group to discard. Choose another action"
+            show_action_screen(
+                screen,
+                SCREEN_WIDTH,
+                SCREEN_HEIGHT,
+                message,
+                2
+            )
     elif action == "Pass Turn":
+        message=f"{current_turn.name} passed their turn."
+        show_action_screen(
+            screen,
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+            message,
+            2
+        )
         pass
+
+
+def draw_cards_dialog():
+    dialog_width = 400
+    dialog_height = 200
+    dialog_x = (SCREEN_WIDTH - dialog_width) // 2
+    dialog_y = (SCREEN_HEIGHT - dialog_height) // 2
+
+    font_path = pygame.font.match_font("arial")
+    title_font = pygame.font.Font(font_path, 20)
+    option_font = pygame.font.Font(font_path, 18)
+    options = [1, 2, 3]
+    option_rects = []
+
+    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 150))  # Black with transparency
+    screen.blit(overlay, (0, 0))
+
+    pygame.draw.rect(
+        screen,
+        (35, 64, 41),
+        (dialog_x, dialog_y, dialog_width, dialog_height),
+        border_radius=10,
+    )
+
+    title_text = "Select how many cards to draw"
+    title_surface = title_font.render(title_text, True, (255, 255, 255))
+    title_x = dialog_x + (dialog_width - title_surface.get_width()) // 2
+    title_y = dialog_y + 26
+    screen.blit(title_surface, (title_x, title_y))
+
+    for i, option in enumerate(options):
+        option_width = 80
+        option_height = 40
+        option_x = (
+            (dialog_x - 20)
+            + (dialog_width - len(options) * option_width) // 2
+            + i * (option_width + 20)
+        )
+        option_y = dialog_y + dialog_height - 80
+
+        option_rect = pygame.Rect(option_x, option_y, option_width, option_height)
+        option_rects.append(option_rect)
+
+        pygame.draw.rect(screen, "#6A994E", option_rect, border_radius=10)
+        option_surface = option_font.render(str(option), True, (255, 255, 255))
+        option_text_x = option_x + (option_width - option_surface.get_width()) // 2
+        option_text_y = option_y + (option_height - option_surface.get_height()) // 2
+        screen.blit(option_surface, (option_text_x, option_text_y))
+
+    pygame.display.flip()
+
+    # Wait for user to select an option
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = pygame.mouse.get_pos()
+                for i, rect in enumerate(option_rects):
+                    if rect.collidepoint(mouse_pos):
+                        return options[i]  # Return the selected option
+
+
+def steal_card_dialog(total_players):
+    dialog_width = 400
+    dialog_height = 200
+    dialog_x = (SCREEN_WIDTH - dialog_width) // 2
+    dialog_y = (SCREEN_HEIGHT - dialog_height) // 2
+
+    font_path = pygame.font.match_font("arial")
+    title_font = pygame.font.Font(font_path, 20)
+    option_font = pygame.font.Font(font_path, 16)
+
+    # Define the options based on total_players
+    options = ["Notty Bot 1"]
+    if total_players == 3:
+        options.append("Notty Bot 2")
+    option_rects = []
+
+    # Create a semi-transparent overlay
+    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 150))  # Black with transparency
+    screen.blit(overlay, (0, 0))
+
+    # Draw the dialog box
+    pygame.draw.rect(
+        screen,
+        (35, 64, 41),
+        (dialog_x, dialog_y, dialog_width, dialog_height),
+        border_radius=10,
+    )
+
+    # Draw the title
+    title_text = "Select a player to steal card from"
+    title_surface = title_font.render(title_text, True, (255, 255, 255))
+    title_x = dialog_x + (dialog_width - title_surface.get_width()) // 2
+    title_y = dialog_y + 26
+    screen.blit(title_surface, (title_x, title_y))
+
+    # Render options (Player 1, Player 2)
+    for i, option in enumerate(options):
+        option_width = 150
+        option_height = 50
+        option_x = (
+            (dialog_x - 20)
+            + (dialog_width - len(options) * option_width) // 2
+            + i * (option_width + 20)
+        )
+        option_y = dialog_y + dialog_height - 80
+
+        option_rect = pygame.Rect(option_x, option_y, option_width, option_height)
+        option_rects.append(option_rect)
+
+        pygame.draw.rect(screen, "#6A994E", option_rect, border_radius=10)
+        option_surface = option_font.render(option, True, (255, 255, 255))
+        option_text_x = option_x + (option_width - option_surface.get_width()) // 2
+        option_text_y = option_y + (option_height - option_surface.get_height()) // 2
+        screen.blit(option_surface, (option_text_x, option_text_y))
+
+    pygame.display.flip()
+
+    # Wait for user to select an option
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = pygame.mouse.get_pos()
+                for i, rect in enumerate(option_rects):
+                    if rect.collidepoint(mouse_pos):
+                        return i + 1  # Return the player number (1 or 2)
 
 
 def handle_computer_turn(game_manager, current_turn):
@@ -557,7 +771,7 @@ def switch_turn(game_manager):
     game_manager.next_turn()
 
 
-def render_game_state(screen,game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT):
+def render_game_state(screen, game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT):
     update_game_state(game_manager, total_players)
     main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players)
 
@@ -583,15 +797,19 @@ def handle_human_buttons(mouse_pos):
 def handle_turn(
     screen, game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT, event
 ):
-    """Handle the current player's turn."""
     global current_turn
     current_turn = game_manager.players[game_manager.current_player]
-    print(current_turn.name)
+
+    # Winner check
+    winner = game_manager.check_winner()
+    if winner:
+        show_winner_screen(screen, winner.name, SCREEN_WIDTH, SCREEN_HEIGHT)
+        return
 
     if current_turn.is_computer:
         # backend computer actions
         message = handle_computer_turn(game_manager, current_turn)
-        show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message)
+        show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message,1)
         switch_turn(game_manager)
     else:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -599,8 +817,12 @@ def handle_turn(
             action = handle_human_buttons(mouse_pos)
             print(action)
             if action:
-                handle_human_player_action(game_manager, current_turn, action)
-                switch_turn(game_manager)
+                handle_human_player_action(
+                    game_manager, current_turn, action, total_players
+                )
+                # If the action is valid, proceed to the next turn
+                if action != "Discard Group" or game_manager.find_largest_valid_group(current_turn.hand):
+                    switch_turn(game_manager)
 
     # Render the updated game state
     render_game_state(screen, game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -609,6 +831,9 @@ def handle_turn(
 def main():
     # Pygame setup
     pygame.init()
+    global screen
+    global SCREEN_WIDTH
+    global SCREEN_HEIGHT
     screen = pygame.display.set_mode((1500, 800))
     clock = pygame.time.Clock()
     running = True
@@ -627,7 +852,7 @@ def main():
         background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)
     )
     current_screen = "start"
-    winner = None 
+    winner = None
     error_message = None
     next_turn_delay = 1000
     next_turn_time = None
@@ -657,7 +882,7 @@ def main():
                         )
                     elif action == "board" and total_players > 1:
                         # Game Start
-                        game_manager.add_players(total_players, "Human Player")
+                        game_manager.add_players(total_players, "Batman")
                         game_manager.start_game()
                         next_turn_time = current_time + next_turn_delay
                         current_screen = "board"
@@ -683,6 +908,11 @@ def main():
                             game_manager.current_player
                         ].is_computer:
                             next_turn_time = current_time + next_turn_delay
+                        # Check winner condition
+                    winner = game_manager.check_winner()
+                    if winner:
+                        show_winner_screen(screen, winner.name, SCREEN_WIDTH, SCREEN_HEIGHT)
+                        current_screen = "start"  # Return to home screen
 
         if (
             current_screen == "board"
@@ -701,12 +931,6 @@ def main():
                 )
                 if not game_manager.players[game_manager.current_player].is_computer:
                     next_turn_time = None  # human action waitss
-        
-        # Check for winner
-        if current_screen == "board" and not winner:
-            winner = game_manager.check_winner()
-            if winner:
-                show_winner_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, winner.name)
 
         # Render current screen
         screen.blit(background_image, (0, 0))

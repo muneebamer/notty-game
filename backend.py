@@ -64,7 +64,7 @@ class GameManager:
     def add_players(self, num_players, human_name):
         self.players.append(Player(human_name, False))
         for i in range(num_players - 1):
-            self.players.append(Player(f"Computer {i+1}", True))
+            self.players.append(Player(f"Notty Bot {i+1}", True))
 
     def start_game(self):
         print("started")
@@ -194,27 +194,31 @@ class GameManager:
                 initial_size = len(computer.hand)
                 if self.draw_cards(computer, draw_count):
                     cards_drawn = len(computer.hand) - initial_size
+                    action_message = f"{computer.name} drew {cards_drawn} cards"
                     print(f"- Draws {cards_drawn} cards")
             elif action == "take":
                 opponents = [p for p in self.players if p != computer]
                 target = random.choice(opponents)
                 if self.take_random_card(target, computer):
+                    action_message = f"{computer.name} stole a card from {target.name}"
                     print(f"- Takes a random card from {target.name}")
             elif action == "discard":
                 largest_group = self.find_largest_valid_group(computer.hand)
                 if largest_group and self.discard_group(computer, largest_group):
+                    action_message = f"{computer.name} discarded {len(largest_group)} cards as a group"
                     print(f"- Discards {len(largest_group)} cards as a group")
             elif action == "skip":
+                action_message = f"{computer.name} passed their turn"
                 print("- passes turn")
 
         else:
             print("- Passes turn")
-            action_message = "Bot passed"
+            action_message = f"{computer.name} passed their turn"
             return action_message
 
         return action_message
 
-    def choose_target_player(self, current_player):
+    def choose_target_player(self, current_player, choice):
         opponents = [p for p in self.players if p != current_player]
         if len(opponents) == 1:
             return opponents[0]
@@ -225,7 +229,6 @@ class GameManager:
 
         while True:
             try:
-                choice = int(input("Enter opponent number: "))
                 if 1 <= choice <= len(opponents):
                     return opponents[choice - 1]
                 print("Invalid opponent number, please try again.")
