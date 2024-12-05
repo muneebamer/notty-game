@@ -452,6 +452,163 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
             screen.blit(number_surface, (number_x, number_y))
 
 
+def game_rules_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
+    """Render the Game Rules Screen."""
+    # Background color and text settings
+    container_color = (35, 64, 41, 120)
+    text_color = "#ffffff"
+    font_path = pygame.font.match_font("arial")  # Default font
+    
+    # Updated font sizes
+    title_font = pygame.font.Font(font_path, 32)  
+    body_font = pygame.font.Font(font_path, 18)  
+
+    # Main container dimensions
+    rect_width = SCREEN_WIDTH // 2
+    rect_height = SCREEN_HEIGHT
+    rect_x = (SCREEN_WIDTH - rect_width) // 2
+    rect_y = (SCREEN_HEIGHT - rect_height) // 2
+
+    # Transparent container
+    container_surface = pygame.Surface(
+        (rect_width, rect_height), pygame.SRCALPHA
+    )
+    container_surface.fill(container_color)
+    screen.blit(container_surface, (rect_x, rect_y))
+
+    # Title
+    title_text = "Game Rules"
+    title_surface = title_font.render(title_text, True, text_color)
+    title_x = rect_x + (rect_width - title_surface.get_width()) // 2
+    title_y = rect_y + 20
+    screen.blit(title_surface, (title_x, title_y))
+
+    # Body Text (Updated Game Rules)
+    rules_text = [
+        "",
+        "",
+        "*Setup*",
+        "   Five cards will be given face up to each player from a shuffled deck.",
+        "   Remaining deck stays face down.",
+        "",
+        "*Gameplay (on your turn)*",
+        "  1. Draw up to 3 cards (once per turn).",
+        "  2. Take 1 random card from another player.",
+        "  3. Discard valid groups:",
+        "      Sequence: Same color, consecutive numbers.",
+        "      Set: Same number, different colors (no repeats).",
+        "  4. Pass (do nothing).",
+        "",
+        "*Additional Rules*",
+        "You cannot hold more than 20 cards in your hand.",
+        "Every time cards are discarded, they are returned to the deck, and the deck is reshuffled.",
+        "",
+        "*Goal: Empty your hand first to win!*",
+        "",
+        "*Enjoy playing Notty!*",
+    ]
+    
+    # Render rules text (Center-aligned within the container)
+    line_height = body_font.get_linesize()
+    start_y = title_y + 70  # Adjusted spacing for larger title
+
+    for line in rules_text:
+        body_surface = body_font.render(line, True, text_color)
+        line_width = body_surface.get_width()
+        text_x = rect_x + (rect_width - line_width) // 2  # Center horizontally
+        screen.blit(body_surface, (text_x, start_y))
+        start_y += line_height + 6
+
+    # Back Button
+    global home_button_rect  # Reuse the home button rect
+    button_width = 200
+    button_height = 50
+    button_x = rect_x + (rect_width - button_width) // 2
+    button_y = rect_y + rect_height - button_height - 20
+    home_button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+    pygame.draw.rect(screen, "#bc4749", home_button_rect, border_radius=10)
+
+    button_text = body_font.render("Back to Home", True, text_color)
+    text_x = button_x + (button_width - button_text.get_width()) // 2
+    text_y = button_y + (button_height - button_text.get_height()) // 2
+    screen.blit(button_text, (text_x, text_y))
+
+def credits_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
+    """Render the Credits Screen."""
+    # Background color and text settings
+    container_color = (35, 64, 41, 120)
+    text_color = "#ffffff"
+    font_path = pygame.font.match_font("arial")  # Default font
+    title_font = pygame.font.Font(font_path, 32)
+    body_font = pygame.font.Font(font_path, 22)  # Larger font for better visibility
+
+    # Main container dimensions
+    rect_width = SCREEN_WIDTH // 2
+    rect_height = SCREEN_HEIGHT
+    rect_x = (SCREEN_WIDTH - rect_width) // 2
+    rect_y = (SCREEN_HEIGHT - rect_height) // 2
+
+    # Transparent container
+    container_surface = pygame.Surface(
+        (rect_width, rect_height), pygame.SRCALPHA
+    )
+    container_surface.fill(container_color)
+    screen.blit(container_surface, (rect_x, rect_y))
+
+    # Title
+    title_text = "Credits"
+    title_surface = title_font.render(title_text, True, text_color)
+    title_x = rect_x + (rect_width - title_surface.get_width()) // 2
+    title_y = rect_y + 20
+    screen.blit(title_surface, (title_x, title_y))
+
+    # Credits Text
+    credits_text = [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "*Muneeb Amer*",
+        "",
+        "*Abu Qais*",
+        "",
+        "*Harsh Moradiya*",
+        "",
+        "*Shabbir Kutbuddin*",
+        "",
+        "*Ali Tahir*",
+        "",
+        "",
+        "Thank you for playing Notty!"
+    ]
+
+    # Render credits text, center-aligned within the container
+    line_height = body_font.get_linesize()
+    start_y = title_y + 80  # Spacing below the title
+    for line in credits_text:
+        line_surface = body_font.render(line, True, text_color)
+        line_width = line_surface.get_width()
+        text_x = rect_x  + (rect_width - line_width) // 2  # Center align
+        screen.blit(line_surface, (text_x, start_y))
+        start_y += line_height
+
+    # Back Button
+    global home_button_rect  # Reuse the home button rect
+    button_width = 200
+    button_height = 50
+    button_x = rect_x + (rect_width - button_width) // 2
+    button_y = rect_y + rect_height - button_height - 20
+    home_button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+    pygame.draw.rect(screen, "#bc4749", home_button_rect, border_radius=10)
+
+    button_text = body_font.render("Back to Home", True, text_color)
+    text_x = button_x + (button_width - button_text.get_width()) // 2
+    text_y = button_y + (button_height - button_text.get_height()) // 2
+    screen.blit(button_text, (text_x, text_y))
+
+
+
 def show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, duration):
     print("Message: ", message)
     overlay_width = 400
@@ -517,6 +674,10 @@ def handle_button_click(mouse_pos):
     """Handle button clicks and return the action."""
     if button_rects[0].collidepoint(mouse_pos):  # Play button
         return "play"
+    elif button_rects[1].collidepoint(mouse_pos):# Game Rules
+        return "Game Rules"
+    elif button_rects[2].collidepoint(mouse_pos):#Credit
+        return"Credits"
     elif button_rects[3].collidepoint(mouse_pos):  # Exit button
         return "exit"
     return None
@@ -793,6 +954,14 @@ def handle_human_buttons(mouse_pos):
     elif human_button_rects[4].collidepoint(mouse_pos):
         return "start"
 
+def handle_game_rules_screen_click(mouse_pos):
+    if home_button_rect.collidepoint(mouse_pos):
+        return "start"
+
+def handle_credits_rules_screen_click(mouse_pos):
+    if home_button_rect.collidepoint(mouse_pos):
+        return "start"
+
 
 def handle_turn(
     screen, game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT, event
@@ -870,8 +1039,20 @@ def main():
                     action = handle_button_click(mouse_pos)
                     if action == "play":
                         current_screen = "play"
+                    elif action == "Game Rules":
+                        current_screen = "Game Rules"
+                    elif action == "Credits":
+                        current_screen = "Credits"
                     elif action == "exit":
                         running = False
+                elif current_screen == "Game Rules":
+                    action = handle_game_rules_screen_click(mouse_pos)
+                    if action == "start":
+                        current_screen = "start"
+                elif current_screen == "Credits":
+                    action = handle_credits_rules_screen_click(mouse_pos)
+                    if action == "start":
+                        current_screen = "start"
                 elif current_screen == "play":
                     action = handle_play_screen_click(mouse_pos, total_players)
                     if action == "start":
@@ -936,6 +1117,10 @@ def main():
         screen.blit(background_image, (0, 0))
         if current_screen == "start":
             start_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT)
+        elif current_screen == "Game Rules":
+            game_rules_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT)
+        elif current_screen == "Credits":
+            credits_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT)
         elif current_screen == "play":
             play_screen(
                 screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players, error_message
