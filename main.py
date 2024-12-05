@@ -236,7 +236,7 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
 
     # Draw the Back to Home button
     pygame.draw.rect(screen, "#BC4749", back_to_home_rect, border_radius=10)
-    back_button_text = small_font.render("Exit game", True, (255, 255, 255))
+    back_button_text = small_font.render("Back to home", True, (255, 255, 255))
     back_text_x = (
         back_button_x + (back_button_width - back_button_text.get_width()) // 2
     )
@@ -674,6 +674,7 @@ def show_winner_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, winner_name):
 def handle_button_click(mouse_pos):
     """Handle button clicks and return the action."""
     if button_rects[0].collidepoint(mouse_pos):  # Play button
+        game_manager.reset_game()
         return "play"
     elif button_rects[1].collidepoint(mouse_pos):# Game Rules
         return "Game Rules"
@@ -741,7 +742,7 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
                 SCREEN_WIDTH,
                 SCREEN_HEIGHT,
                 message,
-                2
+                1.5
             )
     elif action == "Steal Card":
         if total_players > 2:
@@ -755,7 +756,7 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
                 SCREEN_WIDTH,
                 SCREEN_HEIGHT,
                 message,
-                2
+                1.5
             )
         else:
             target_player = game_manager.choose_target_player(current_turn, 2)
@@ -766,7 +767,7 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
                 SCREEN_WIDTH,
                 SCREEN_HEIGHT,
                 message,
-                2
+                1.5
             )
 
     elif action == "Discard Group":
@@ -779,7 +780,7 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
                 SCREEN_WIDTH,
                 SCREEN_HEIGHT,
                 message,
-                2
+                1.5
             )
         else:
             message = "No valid group to discard. Choose another action"
@@ -788,7 +789,7 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
                 SCREEN_WIDTH,
                 SCREEN_HEIGHT,
                 message,
-                2
+                1.5
             )
     elif action == "Pass Turn":
         message=f"{current_turn.name} passed their turn."
@@ -797,7 +798,7 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
             SCREEN_WIDTH,
             SCREEN_HEIGHT,
             message,
-            2
+            1.5
         )
         pass
 
@@ -992,7 +993,7 @@ def handle_turn(
     if current_turn.is_computer:
         # backend computer actions
         message = handle_computer_turn(game_manager, current_turn)
-        show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message,1)
+        show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message,1.5)
         switch_turn(game_manager)
     else:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:

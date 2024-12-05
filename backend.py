@@ -61,6 +61,12 @@ class GameManager:
         self.current_player = 0
         self.actions_this_turn = {"draw": False, "take_card": False}
 
+    def reset_game(self):
+        self.deck = Deck()  # Reinitialize the deck
+        self.players = [] 
+        self.current_player = 0
+        self.actions_this_turn = {'draw': False, 'take_card': False}
+
     def add_players(self, num_players, human_name):
         self.players.append(Player(human_name, False))
         for i in range(num_players - 1):
