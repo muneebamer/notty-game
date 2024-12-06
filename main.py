@@ -694,6 +694,7 @@ def handle_play_screen_click(mouse_pos, total_players):
         return ("option", 3)
     elif start_button_rect.collidepoint(mouse_pos):
         if total_players > 1:
+            playSound('./sounds/game-start.mp3',0)
             return "board"
         else:
             return "error"  # Return error state if no valid selection is made
@@ -789,7 +790,7 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
         if largest_group:
             game_manager.discard_group(current_turn, largest_group)
             message = f"You discarded a valid group of {len(largest_group)} cards. Deck reshuffled"
-            show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5)
+            show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5)            
             return True
         else:
             message = "No valid group to discard. Choose another action"
@@ -944,6 +945,13 @@ def handle_computer_turn(game_manager, current_turn):
 
 def switch_turn(game_manager):
     game_manager.next_turn()
+
+def playSound(filePath, duration):
+    pygame.init()
+    pygame.mixer.music.load(filePath)
+    pygame.mixer.music.play()
+    time.sleep(duration)
+    
 
 
 def render_game_state(screen, game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT):

@@ -1,6 +1,5 @@
 import random
 
-
 # Define the Card class
 class Card:
     def __init__(self, color, number):
