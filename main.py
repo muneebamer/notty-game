@@ -222,7 +222,6 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
         "green": "#e5e5e5",
         "blue": "#000000",
         "yellow": "#e5e5e5",
-
     }
 
     # Load and scale the background image
@@ -279,7 +278,6 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
     text_x = box_x + (box_width - turn_surface.get_width()) // 2
     text_y = box_y + (box_height - turn_surface.get_height()) // 2
     screen.blit(turn_surface, (text_x, text_y))
-
 
     # Deck showing top 5 for now
     deck_obj = game_manager.deck.cards
@@ -467,10 +465,10 @@ def game_rules_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     container_color = (35, 64, 41, 120)
     text_color = "#ffffff"
     font_path = pygame.font.match_font("arial")  # Default font
-    
+
     # Updated font sizes
-    title_font = pygame.font.Font(font_path, 32)  
-    body_font = pygame.font.Font(font_path, 18)  
+    title_font = pygame.font.Font(font_path, 32)
+    body_font = pygame.font.Font(font_path, 18)
 
     # Main container dimensions
     rect_width = SCREEN_WIDTH // 2
@@ -479,9 +477,7 @@ def game_rules_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     rect_y = (SCREEN_HEIGHT - rect_height) // 2
 
     # Transparent container
-    container_surface = pygame.Surface(
-        (rect_width, rect_height), pygame.SRCALPHA
-    )
+    container_surface = pygame.Surface((rect_width, rect_height), pygame.SRCALPHA)
     container_surface.fill(container_color)
     screen.blit(container_surface, (rect_x, rect_y))
 
@@ -516,7 +512,7 @@ def game_rules_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
         "",
         "*Enjoy playing Notty!*",
     ]
-    
+
     # Render rules text (Center-aligned within the container)
     line_height = body_font.get_linesize()
     start_y = title_y + 70  # Adjusted spacing for larger title
@@ -542,6 +538,7 @@ def game_rules_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     text_y = button_y + (button_height - button_text.get_height()) // 2
     screen.blit(button_text, (text_x, text_y))
 
+
 def credits_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     """Render the Credits Screen."""
     # Background color and text settings
@@ -558,9 +555,7 @@ def credits_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     rect_y = (SCREEN_HEIGHT - rect_height) // 2
 
     # Transparent container
-    container_surface = pygame.Surface(
-        (rect_width, rect_height), pygame.SRCALPHA
-    )
+    container_surface = pygame.Surface((rect_width, rect_height), pygame.SRCALPHA)
     container_surface.fill(container_color)
     screen.blit(container_surface, (rect_x, rect_y))
 
@@ -589,7 +584,7 @@ def credits_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
         "*Ali Tahir*",
         "",
         "",
-        "Thank you for playing Notty!"
+        "Thank you for playing Notty!",
     ]
 
     # Render credits text, center-aligned within the container
@@ -598,7 +593,7 @@ def credits_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     for line in credits_text:
         line_surface = body_font.render(line, True, text_color)
         line_width = line_surface.get_width()
-        text_x = rect_x  + (rect_width - line_width) // 2  # Center align
+        text_x = rect_x + (rect_width - line_width) // 2  # Center align
         screen.blit(line_surface, (text_x, start_y))
         start_y += line_height
 
@@ -615,7 +610,6 @@ def credits_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT):
     text_x = button_x + (button_width - button_text.get_width()) // 2
     text_y = button_y + (button_height - button_text.get_height()) // 2
     screen.blit(button_text, (text_x, text_y))
-
 
 
 def show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, duration):
@@ -684,10 +678,10 @@ def handle_button_click(mouse_pos):
     if button_rects[0].collidepoint(mouse_pos):  # Play button
         game_manager.reset_game()
         return "play"
-    elif button_rects[1].collidepoint(mouse_pos):# Game Rules
+    elif button_rects[1].collidepoint(mouse_pos):  # Game Rules
         return "Game Rules"
-    elif button_rects[2].collidepoint(mouse_pos):#Credit
-        return"Credits"
+    elif button_rects[2].collidepoint(mouse_pos):  # Credit
+        return "Credits"
     elif button_rects[3].collidepoint(mouse_pos):  # Exit button
         return "exit"
     return None
@@ -705,6 +699,7 @@ def handle_play_screen_click(mouse_pos, total_players):
             return "error"  # Return error state if no valid selection is made
     elif home_button_rect.collidepoint(mouse_pos):
         return "start"
+
 
 def handle_win_screen_click(mouse_pos):
     if home_button_rect.collidepoint(mouse_pos):
@@ -742,105 +737,69 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
                     # Remove Discard Group from possible actions and try again
                     possible_actions.remove("Discard Group")
                     continue
-            return handle_human_player_action(game_manager, current_turn, random_action, total_players)
-
+            return handle_human_player_action(
+                game_manager, current_turn, random_action, total_players
+            )
 
     if action == "Draw Cards":
-            option_selected = draw_cards_dialog()
-            if option_selected:
+        option_selected = draw_cards_dialog()
+        if option_selected:
+            if len(current_turn.hand) + option_selected <= 20:
+                game_manager.draw_cards(current_turn, option_selected)
+                message = f"{option_selected} cards added to your deck"
+                show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5)
+                return True
+            else:
+                message = f"you have {len(current_turn.hand)} cards in deck...cant draw"
+                show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5)
+                return False
+                # return handle_human_player_action(game_manager, current_turn, action, total_players)
 
-                if len(current_turn.hand) + option_selected <= 20:
-                    game_manager.draw_cards(current_turn, option_selected)
-                    message = f"{option_selected} cards added to your deck"
-                    show_action_screen(
-                                screen,
-                                SCREEN_WIDTH,
-                                SCREEN_HEIGHT,
-                                message,
-                                1.5
-                            )
-                else :
-                    message= f"you have {len(current_turn.hand)} cards in deck...cant draaw"
-                    show_action_screen(
-                                screen,
-                                SCREEN_WIDTH,
-                                SCREEN_HEIGHT,
-                                message,
-                                1.5
-                            )
-                    return handle_human_player_action(game_manager, current_turn, action, total_players)
-       
-    ##improve here  
+    ##improve here
     elif action == "Steal Card":
-        if total_players > 2:
-            choice = steal_card_dialog(total_players)
-            if choice:
-                target_player = game_manager.choose_target_player(current_turn, choice)
-                if len(current_turn.hand)!=20:
-                    game_manager.take_random_card(target_player, current_turn)
-                    message = f"You stole a card from {target_player.name}"
-                    show_action_screen(
-                    screen,
-                    SCREEN_WIDTH,
-                    SCREEN_HEIGHT,
-                    message,
-                    1.5
-                )
-                else:
-                    message = "you have 20 cards, cant draw"
-                    show_action_screen(
-                    screen,
-                    SCREEN_WIDTH,
-                    SCREEN_HEIGHT,
-                    message,
-                    1.5
-                )
-                    return handle_human_player_action(game_manager, current_turn, action, total_players)
+        if len(current_turn.hand) != 20:
 
-                    
+            if total_players > 2:
+                choice = steal_card_dialog(total_players)
+                if choice:
+                    target_player = game_manager.choose_target_player(
+                        current_turn, choice
+                    )
+                    if len(current_turn.hand) != 20:
+                        game_manager.take_random_card(target_player, current_turn)
+                        message = f"You stole a card from {target_player.name}"
+                        show_action_screen(
+                            screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5
+                        )
+                        return True
+
+            else:
+                target_player = game_manager.choose_target_player(current_turn, 2)
+                game_manager.take_random_card(target_player, current_turn)
+                message = f"You stole a card from {target_player.name}"
+                show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5)
+                return True
         else:
-            target_player = game_manager.choose_target_player(current_turn, 2)
-            game_manager.take_random_card(target_player, current_turn)
-            message = f"You stole a card from {target_player.name}"
-            show_action_screen(
-                screen,
-                SCREEN_WIDTH,
-                SCREEN_HEIGHT,
-                message,
-                1.5
-            )
+            message = f"You already have 20 cards!"
+            show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5)
+            return False
 
     elif action == "Discard Group":
         largest_group = game_manager.find_largest_valid_group(current_turn.hand)
         if largest_group:
             game_manager.discard_group(current_turn, largest_group)
-            message="You discarded a valid group. Deck reshuffled"
-            show_action_screen(
-                screen,
-                SCREEN_WIDTH,
-                SCREEN_HEIGHT,
-                message,
-                1.5
-            )
+            message = "You discarded a valid group. Deck reshuffled"
+            show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5)
+            return True
         else:
             message = "No valid group to discard. Choose another action"
-            show_action_screen(
-                screen,
-                SCREEN_WIDTH,
-                SCREEN_HEIGHT,
-                message,
-                1.5
-            )
+            show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5)
+            return False
     elif action == "Pass Turn":
-        message="You passed your turn."
-        show_action_screen(
-            screen,
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT,
-            message,
-            1.5
-        )
+        message = "You passed your turn."
+        show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5)
         pass
+    return True
 
 
 def draw_cards_dialog():
@@ -1009,9 +968,11 @@ def handle_human_buttons(mouse_pos):
     elif human_button_rects[4].collidepoint(mouse_pos):
         return "Play for me"
 
+
 def handle_game_rules_screen_click(mouse_pos):
     if home_button_rect.collidepoint(mouse_pos):
         return "start"
+
 
 def handle_credits_rules_screen_click(mouse_pos):
     if home_button_rect.collidepoint(mouse_pos):
@@ -1027,19 +988,18 @@ def handle_turn(
     if current_turn.is_computer:
         # backend computer actions
         message = handle_computer_turn(game_manager, current_turn)
-        show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message,1.8)
+        show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.8)
         switch_turn(game_manager)
     else:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
             action = handle_human_buttons(mouse_pos)
-            print(action)
             if action:
-                handle_human_player_action(
+                res = handle_human_player_action(
                     game_manager, current_turn, action, total_players
                 )
                 # If the action is valid, proceed to the next turn
-                if action != "Discard Group" or game_manager.find_largest_valid_group(current_turn.hand):
+                if res:
                     switch_turn(game_manager)
 
     # Render the updated game state
@@ -1166,7 +1126,7 @@ def main():
             winner = game_manager.check_winner()
             if winner:
                 current_screen = "winner"
-        
+
         # Render current screen
         screen.blit(background_image, (0, 0))
         if current_screen == "start":
