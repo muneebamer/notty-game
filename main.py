@@ -788,7 +788,7 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
         largest_group = game_manager.find_largest_valid_group(current_turn.hand)
         if largest_group:
             game_manager.discard_group(current_turn, largest_group)
-            message = "You discarded a valid group. Deck reshuffled"
+            message = f"You discarded a valid group of {len(largest_group)} cards. Deck reshuffled"
             show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, 1.5)
             return True
         else:
