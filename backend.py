@@ -182,7 +182,7 @@ class GameManager:
         return True
         # return False
 
-    def handle_computer_turn(self, computer):
+    def handle_computer_turn2(self, computer):
         action_message = f"{computer.name} took an action!"
         print(f"\n{computer.name}'s action:")
 
@@ -230,6 +230,41 @@ class GameManager:
             action_message = f"{computer.name} passed their turn"
             return action_message
 
+        return action_message
+    
+    def handle_computer_turn(self, computer):
+        action_message = f"{computer.name} took an action!"
+        
+        # Strategy 1: Try to win - check if we can discard cards
+        largest_group = self.find_largest_valid_group(computer.hand)
+        if largest_group:
+            if self.discard_group(computer, largest_group):
+                action_message = f"{computer.name} discarded {len(largest_group)} cards as a group"
+                return action_message
+        
+        # Strategy 3: Draw cards if hand is small
+        if len(computer.hand) < 8 and not self.actions_this_turn["draw"]:
+            draw_count = min(3, 20 - len(computer.hand))
+            initial_size = len(computer.hand)
+            if self.draw_cards(computer, draw_count):
+                cards_drawn = len(computer.hand) - initial_size
+                action_message = f"{computer.name} drew {cards_drawn} cards"
+                return action_message
+            
+        # Strategy 2: Steal cards strategically
+        if not self.actions_this_turn["take_card"]:
+            # Filter opponents with more than 2 cards
+            valid_opponents = [p for p in self.players if p != computer and len(p.hand) > 2]
+            if valid_opponents:
+                target = random.choice(valid_opponents)
+                if self.take_random_card(target, computer):
+                    action_message = f"{computer.name} stole a card from {target.name}"
+                    return action_message
+        
+        
+        
+        # Strategy 4: Skip turn if no other actions possible
+        action_message = f"{computer.name} passed their turn"
         return action_message
 
     def choose_target_player(self, current_player, choice):
