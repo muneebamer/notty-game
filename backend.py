@@ -243,7 +243,7 @@ class GameManager:
                 return action_message
         
         # Strategy 3: Draw cards if hand is small
-        if len(computer.hand) < 8 and not self.actions_this_turn["draw"]:
+        if len(computer.hand) < 12 and not self.actions_this_turn["draw"]:
             draw_count = min(3, 20 - len(computer.hand))
             initial_size = len(computer.hand)
             if self.draw_cards(computer, draw_count):
@@ -260,8 +260,6 @@ class GameManager:
                 if self.take_random_card(target, computer):
                     action_message = f"{computer.name} stole a card from {target.name}"
                     return action_message
-        
-        
         
         # Strategy 4: Skip turn if no other actions possible
         action_message = f"{computer.name} passed their turn"
