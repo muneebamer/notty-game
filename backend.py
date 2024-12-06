@@ -63,9 +63,9 @@ class GameManager:
 
     def reset_game(self):
         self.deck = Deck()  # Reinitialize the deck
-        self.players = [] 
+        self.players = []
         self.current_player = 0
-        self.actions_this_turn = {'draw': False, 'take_card': False}
+        self.actions_this_turn = {"draw": False, "take_card": False}
 
     def add_players(self, num_players, human_name):
         self.players.append(Player(human_name, False))
@@ -266,11 +266,6 @@ class GameManager:
         return None
 
 
-
-
-
-
-
 def show_available_actions():
     print("\nAvailable actions:")
     print("1 - Draw cards (1-3)")
@@ -278,11 +273,6 @@ def show_available_actions():
     print("3 - Discard largest valid group")
     print("4 - Pass turn")
     print("5 - Play for me ")
-
-
-
-
-
 
 
 def main():

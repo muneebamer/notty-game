@@ -217,6 +217,14 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
         "yellow": "#ffd500",
     }
 
+    deck_colors = {
+        "red": "#000000",
+        "green": "#e5e5e5",
+        "blue": "#000000",
+        "yellow": "#e5e5e5",
+
+    }
+
     # Load and scale the background image
     main_bg_image = pygame.image.load("start-game-bg.jpg")
     main_bg_image = pygame.transform.scale(main_bg_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -286,7 +294,7 @@ def main_board_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, total_players=0):
 
     for i, card in enumerate(top_deck_cards):
         color_name, number = card.split()
-        card_color = pygame.Color(card_colors[color_name])
+        card_color = pygame.Color(deck_colors[color_name])
 
         card_rect = pygame.Rect(deck_x, deck_y - i * 15, deck_width, deck_height)
         pygame.draw.rect(screen, card_color, card_rect, border_radius=10)
@@ -634,7 +642,7 @@ def show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message, duration):
     time.sleep(duration)
 
 
-def show_winner_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, winner_name):
+def show_winner_screen(screen, winner_name, SCREEN_WIDTH, SCREEN_HEIGHT):
     overlay_width = 600
     overlay_height = 200
     overlay_x = (SCREEN_WIDTH - overlay_width) // 2
@@ -696,6 +704,10 @@ def handle_play_screen_click(mouse_pos, total_players):
         else:
             return "error"  # Return error state if no valid selection is made
     elif home_button_rect.collidepoint(mouse_pos):
+        return "start"
+
+def handle_win_screen_click(mouse_pos):
+    if home_button_rect.collidepoint(mouse_pos):
         return "start"
 
 
@@ -802,7 +814,7 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
         largest_group = game_manager.find_largest_valid_group(current_turn.hand)
         if largest_group:
             game_manager.discard_group(current_turn, largest_group)
-            message="You discarded a valid group"
+            message="You discarded a valid group. Deck reshuffled"
             show_action_screen(
                 screen,
                 SCREEN_WIDTH,
@@ -820,7 +832,7 @@ def handle_human_player_action(game_manager, current_turn, action, total_players
                 1.5
             )
     elif action == "Pass Turn":
-        message=f"{current_turn.name} passed their turn."
+        message="You passed your turn."
         show_action_screen(
             screen,
             SCREEN_WIDTH,
@@ -935,7 +947,7 @@ def steal_card_dialog(total_players):
         option_width = 150
         option_height = 50
         option_x = (
-            (dialog_x - 20)
+            (dialog_x - 10)
             + (dialog_width - len(options) * option_width) // 2
             + i * (option_width + 20)
         )
@@ -1012,16 +1024,10 @@ def handle_turn(
     global current_turn
     current_turn = game_manager.players[game_manager.current_player]
 
-    # Winner check
-    winner = game_manager.check_winner()
-    if winner:
-        show_winner_screen(screen, winner.name, SCREEN_WIDTH, SCREEN_HEIGHT)
-        return
-
     if current_turn.is_computer:
         # backend computer actions
         message = handle_computer_turn(game_manager, current_turn)
-        show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message,1.5)
+        show_action_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, message,1.8)
         switch_turn(game_manager)
     else:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -1132,12 +1138,11 @@ def main():
                             game_manager.current_player
                         ].is_computer:
                             next_turn_time = current_time + next_turn_delay
-                        # Check winner condition
-                    winner = game_manager.check_winner()
-                    if winner:
-                        show_winner_screen(screen, winner.name, SCREEN_WIDTH, SCREEN_HEIGHT)
-                        current_screen = "start"  # Return to home screen
-
+                elif current_screen == "winner":
+                    # Handle clicks on the winner screen
+                    action = handle_win_screen_click(mouse_pos)
+                    if action == "start":
+                        current_screen = "start"
         if (
             current_screen == "board"
             and next_turn_time is not None
@@ -1156,6 +1161,12 @@ def main():
                 if not game_manager.players[game_manager.current_player].is_computer:
                     next_turn_time = None  # human action waitss
 
+        # Winner condition check
+        if current_screen == "board":
+            winner = game_manager.check_winner()
+            if winner:
+                current_screen = "winner"
+        
         # Render current screen
         screen.blit(background_image, (0, 0))
         if current_screen == "start":
@@ -1172,7 +1183,9 @@ def main():
             render_game_state(
                 screen, game_manager, total_players, SCREEN_WIDTH, SCREEN_HEIGHT
             )
-
+        elif current_screen == "winner":
+            # Render the winner screen
+            show_winner_screen(screen, winner.name, SCREEN_WIDTH, SCREEN_HEIGHT)
         pygame.display.flip()
         clock.tick(60)
 
